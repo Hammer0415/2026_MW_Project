@@ -13,7 +13,6 @@ public static class AC_PlayerSetupMenu
         Rigidbody rb = playerObj.AddComponent<Rigidbody>();
         PlayerInput playerInput = playerObj.AddComponent<PlayerInput>();
         AC_PlayerController controller = playerObj.AddComponent<AC_PlayerController>();
-        AC_CameraController cameraController = playerObj.AddComponent<AC_CameraController>();
         //====================//
 
         // Collider Setup
