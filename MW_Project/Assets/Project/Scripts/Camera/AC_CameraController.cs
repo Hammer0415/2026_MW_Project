@@ -62,8 +62,8 @@ public class AC_CameraController : MonoBehaviour
         Vector3 targetPosition = playerPivot - (targetRotation * Vector3.forward * distance);
 
         // Camera Smooth
-        transform.LookAt(playerPivot);
         transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref currentVelocity, positionSmoothTime);
+        transform.LookAt(playerPivot);
     }
 
     //======================================//

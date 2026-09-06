@@ -6,6 +6,7 @@ public class AC_PlayerController : MonoBehaviour
     //=====Components=====//
     private Rigidbody rb = null;
     private CapsuleCollider collider = null;
+    private AC_Player player = null;
     //====================//
 
     //=====InputValues=====//
@@ -67,6 +68,8 @@ public class AC_PlayerController : MonoBehaviour
 
     private void HandleMovement()
     {
+        if (!player) return;
+
         // Idle
         if (moveInput == Vector2.zero)
         {
@@ -92,7 +95,7 @@ public class AC_PlayerController : MonoBehaviour
         }
 
         // Speed Apply
-        float movementSpeed = (sprintInput > 0.0f) ? sprintSpeed : moveSpeed;
+        float movementSpeed = (player.isSprint) ? sprintSpeed : moveSpeed;
         Vector3 targetVelocity = moveDirection * movementSpeed;
         targetVelocity.y = GetLinearVelocity().y;
 
@@ -135,9 +138,11 @@ public class AC_PlayerController : MonoBehaviour
     {
         if (rb == null) rb = GetComponent<Rigidbody>();
         if (collider == null) collider = GetComponent<CapsuleCollider>();
+        if (player == null) player = AC_Player.Instance;
 
         if (rb == null) Debug.LogError("Rigidbody를 찾을 수 없습니다.");
         if (collider == null) Debug.LogError("CapsuleCollider를 찾을 수 없습니다.");
+        if (player == null) Debug.LogError("AC_Player를 찾을 수 없습니다.");
     }
     
     private void StartInitSetup()
@@ -167,7 +172,21 @@ public class AC_PlayerController : MonoBehaviour
 
     public void OnSprint(InputAction.CallbackContext context)
     {
-        sprintInput = context.ReadValue<float>();
+        if (player == null) return;
+
+        if (context.performed)
+        {
+            if (player.Stemina() > 0.0f && !player.isStaminaExhausted)
+            {
+                sprintInput = context.ReadValue<float>();
+                player.isSprint = true;
+            }
+        }
+        else if (context.canceled)
+        {
+            sprintInput = 0.0f;
+            player.isSprint = false;
+        }
     }
 
     public void OnAttack(InputAction.CallbackContext context)
