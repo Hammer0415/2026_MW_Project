@@ -190,12 +190,6 @@ public class AC_PlayerController : MonoBehaviour
             player.isSprint = false;
         }
     }
-
-    public void OnAttack(InputAction.CallbackContext context)
-    {
-        if (context.performed) attackInput = true;
-        else if (context.canceled) attackInput = false;
-    }
     //======================================//
     #endregion
 }

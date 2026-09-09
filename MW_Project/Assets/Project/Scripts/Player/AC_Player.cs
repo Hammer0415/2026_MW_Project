@@ -27,6 +27,7 @@ public class AC_Player : MonoBehaviour
     //=====CheckingVars=====//
     [HideInInspector] public bool isSprint = false;
     [HideInInspector] public bool isStaminaExhausted = false;
+    [HideInInspector] public bool isDead = false;
     //======================//
 
     private void Awake()
@@ -88,6 +89,7 @@ public class AC_Player : MonoBehaviour
 
         isSprint = false;
         isStaminaExhausted = false;
+        isDead = false;
     }
     //======================================//
 }
