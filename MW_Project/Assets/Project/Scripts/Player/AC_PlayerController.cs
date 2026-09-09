@@ -138,21 +138,23 @@ public class AC_PlayerController : MonoBehaviour
     {
         if (rb == null) rb = GetComponent<Rigidbody>();
         if (collider == null) collider = GetComponent<CapsuleCollider>();
-        if (player == null) player = AC_Player.Instance;
 
         if (rb == null) Debug.LogError("Rigidbody를 찾을 수 없습니다.");
         if (collider == null) Debug.LogError("CapsuleCollider를 찾을 수 없습니다.");
-        if (player == null) Debug.LogError("AC_Player를 찾을 수 없습니다.");
     }
     
     private void StartInitSetup()
     {
+        if (Camera.main != null)
         {
-            if (Camera.main != null)
-            {
-                mainCameraTransform = Camera.main.transform;
-            }
+            mainCameraTransform = Camera.main.transform;
         }
+
+        //=====Components=====//
+        if (player == null) player = AC_Player.Instance;
+
+        if (player == null) Debug.LogError("AC_Player를 찾을 수 없습니다.");
+        //====================//
     }
     //======================================//
 
