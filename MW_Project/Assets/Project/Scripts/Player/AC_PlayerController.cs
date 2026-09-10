@@ -10,14 +10,13 @@ public class AC_PlayerController : MonoBehaviour
 
     [Header("Animation Settings")]
     [Tooltip("애니메이터 컴포넌트")]
-    [SerializeField] private Animator animator = null;
+    public Animator animator = null;
     //====================//
 
     //=====InputValues=====//
     private Vector2 moveInput = Vector2.zero;
     private bool jumpInput = false;
     private float sprintInput = 0.0f;
-    private bool attackInput = false;
     //=====================//
 
     //=====PlayerValues=====//

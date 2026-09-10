@@ -64,6 +64,8 @@ public class AC_PlayerAttackController : MonoBehaviour
         if (context.performed)
         {
             TryShoot();
+
+            if (controller) controller.animator.SetTrigger("isAttack");
         }
     }
 
