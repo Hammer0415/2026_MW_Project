@@ -7,6 +7,10 @@ public class AC_PlayerController : MonoBehaviour
     private Rigidbody rb = null;
     private CapsuleCollider collider = null;
     private AC_Player player = null;
+
+    [Header("Animation Settings")]
+    [Tooltip("애니메이터 컴포넌트")]
+    [SerializeField] private Animator animator = null;
     //====================//
 
     //=====InputValues=====//
@@ -52,6 +56,7 @@ public class AC_PlayerController : MonoBehaviour
     {
         CheckGrounded();
         HandleJump();
+        HandleAnimation();
     }
 
     private void FixedUpdate()
@@ -111,6 +116,22 @@ public class AC_PlayerController : MonoBehaviour
             SetLinearVelocity(vel);
             jumpInput = false;
         }
+    }
+
+    private void HandleAnimation()
+    {
+        if (animator == null) return;
+
+        bool isMoving = moveInput != Vector2.zero;
+
+        bool isWalk = isMoving && !player.isSprint;
+        bool isRun = isMoving && player.isSprint;
+
+        bool isJump = !isGrounded;
+
+        animator.SetBool("isWalk", isWalk);
+        animator.SetBool("isRun", isRun);
+        animator.SetBool("isJump", isJump);
     }
 
     //======================================//

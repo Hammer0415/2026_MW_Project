@@ -23,6 +23,14 @@ public class AC_PlayerAttackController : MonoBehaviour
     [SerializeField] private float autoTargetRotateSpeed = 0.0f;
     //======================//
 
+    //=====VFXSettings=====//
+    [Header("VFX Settings")]
+    [Tooltip("적 피격 시 생성할 히트 이펙트 프리팹")]
+    [SerializeField] private GameObject hitEffectPrefab;
+    [Tooltip("히트 이펙트 자동 파괴 시간 (초)")]
+    [SerializeField] private float hitEffectDestroyTime = 1.0f;
+    //======================//
+
     //=====WeaponSetting=====//
     [Header("Weapon Settings")]
     [Tooltip("총알 발사 위치 (총구 Transform)")]
@@ -138,7 +146,20 @@ public class AC_PlayerAttackController : MonoBehaviour
         if (enemy != null)
         {
             enemy.TakeDamage(attackDamage);
-            Debug.Log($"[{target.name}]에게 {attackDamage} 데미지 타격!");      // Debug
+
+            Vector3 origin = muzzlePoint != null ? muzzlePoint.position : transform.position + Vector3.up * 1.2f;
+            Vector3 dirToTarget = (target.position + Vector3.up * 1.0f - origin).normalized;
+
+            if (Physics.Raycast(origin, dirToTarget, out RaycastHit hit, attackRange + 2.0f, enemyLayer))
+            {
+                SpawnHitEffect(hit.point, hit.normal);
+            }
+            else
+            {
+                SpawnHitEffect(target.position + Vector3.up * 1.0f, -dirToTarget);
+            }
+
+            Debug.Log($"[{target.name}]에게 {attackDamage} 데미지 타격!");
         }
     }
 
@@ -155,6 +176,16 @@ public class AC_PlayerAttackController : MonoBehaviour
                 enemy.TakeDamage(attackDamage);
             }
         }
+    }
+
+    private void SpawnHitEffect(Vector3 spawnPosition, Vector3 surfaceNormal)
+    {
+        if (hitEffectPrefab == null) return;
+
+        Quaternion hitRotation = Quaternion.LookRotation(surfaceNormal);
+
+        GameObject effectInstance = Instantiate(hitEffectPrefab, spawnPosition, hitRotation);
+        Destroy(effectInstance, hitEffectDestroyTime);
     }
 
     private void OnDrawGizmosSelected()

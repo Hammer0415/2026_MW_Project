@@ -160,7 +160,7 @@ MonoBehaviour:
   m_MinValue: 0
   m_MaxValue: 1
   m_WholeNumbers: 0
-  m_Value: 0
+  m_Value: 0.5
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -176,6 +176,7 @@ GameObject:
   - component: {fileID: 8987016212943768186}
   - component: {fileID: 5247277247964163007}
   - component: {fileID: 3188283561589027750}
+  - component: {fileID: 495230441392366978}
   m_Layer: 5
   m_Name: Enemy HP Bar Canvas
   m_TagString: Untagged
@@ -267,6 +268,18 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &495230441392366978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3547477914798514565}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5693e7af080f345bea2a792ae87c8adb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AC_EnemyHpBarController
 --- !u!1 &5597920721880135816
 GameObject:
   m_ObjectHideFlags: 0
@@ -325,7 +338,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
