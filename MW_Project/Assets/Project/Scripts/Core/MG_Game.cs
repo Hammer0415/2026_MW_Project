@@ -6,11 +6,19 @@ public class MG_Game : MonoBehaviour
     public static MG_Game Instance { get; private set; }
     //===================//
 
-    //=====GameSetting=====//
+    //=====GameSettings=====//
     [Header("Game Settings")]
     [Tooltip("마우스 커서 숨김 여부")]
-    public bool isCursorLocked = false;
+    [ReadOnly]
+    [SerializeField] private bool isCursorLocked = false;
     //=====================//
+
+    //=====StateSettings=====//
+    [Header("State Settings")]
+    [Tooltip("플레이어 게임오버 여부")]
+    [ReadOnly]
+    public bool isPlayerDead = false;
+    //=======================//
 
     private void Awake()
     {
@@ -27,7 +35,7 @@ public class MG_Game : MonoBehaviour
 
     private void Start()
     {
-        isCursorLocked = false;
+        StartInitSetup();
     }
 
     public void CursorOnOff()
@@ -45,4 +53,12 @@ public class MG_Game : MonoBehaviour
             isCursorLocked = false;
         }
     }
+
+    //======================================//
+    private void StartInitSetup()
+    {
+        isCursorLocked = false;
+        isPlayerDead = false;
+    }
+    //======================================//
 }

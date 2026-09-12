@@ -7,28 +7,51 @@ public class AC_PlayerController : MonoBehaviour
     private Rigidbody rb = null;
     private CapsuleCollider collider = null;
     private AC_Player player = null;
+    private AC_TargetingController targeting = null;
 
     [Header("Animation Settings")]
     [Tooltip("애니메이터 컴포넌트")]
     public Animator animator = null;
     //====================//
 
+    //=====ReferenceVars=====//
+    [ReadOnly]
+    [SerializeField] private bool canMove = true;
+
+    public bool CanMove => canMove;
+    //=======================//
+
     //=====InputValues=====//
     private Vector2 moveInput = Vector2.zero;
     private bool jumpInput = false;
-    private float sprintInput = 0.0f;
     //=====================//
 
-    //=====PlayerValues=====//
-    [Header("Player Settings")]
+    //=====PlayerSetting=====//
+    [Header("Player Movement Settings")]
     [Tooltip("플레이어 이동 속도")]
     [SerializeField] private float moveSpeed = 0.0f;
     [Tooltip("플레이어 달리기 속도")]
     [SerializeField] private float sprintSpeed = 0.0f;
-    [Tooltip("플레이어 점프 파워")]
-    [SerializeField] private float jumpPower = 0.0f;
     [Tooltip("캐릭터 회전 속도")]
     [SerializeField] private float rotationSpeed = 0.0f;
+
+    [Header("Sprint Settings")]
+    [Tooltip("달리기 시작 시 즉시 소모되는 스테미나")]
+    [SerializeField] private float sprintStartStaminaCost = 0.0f;
+    [Tooltip("달리기 시작 전 회피 거리")]
+    [SerializeField] private float dodgeDistance = 0.0f;
+    [Tooltip("회피 지속 시간")]
+    [SerializeField] private float dodgeDuration = 0.0f;
+
+    [Header("Jump Settings")]
+    [Tooltip("플레이어 점프 파워")]
+    [SerializeField] private float jumpPower = 0.0f;
+    [Tooltip("추가 중력 배율")]
+    [SerializeField] private float fallGravityMultiplier = 0.0f;
+    [Tooltip("점프 상승 중 추가 중력")]
+    [SerializeField] private float lowJumpGravityMultiplier = 0.0f;
+
+    [Header("Layers")]
     [Tooltip("지면 체크 레이어")]
     [SerializeField] private LayerMask groundMask;
     //======================//
@@ -39,7 +62,14 @@ public class AC_PlayerController : MonoBehaviour
 
     //=====CheckingVars=====//
     private bool isGrounded = false;
+    private bool sprintHeld = false;
+    private bool isDodging = false;
     //======================//
+
+    //=====OtherSettings=====//
+    private float dodgeTimer = 0.0f;
+    private Vector3 dodgeDirection = Vector3.zero;
+    //===================//
 
     private void Awake()
     {
@@ -53,14 +83,29 @@ public class AC_PlayerController : MonoBehaviour
     
     private void Update()
     {
-        CheckGrounded();
-        HandleJump();
+        if (canMove)
+        {
+            CheckGrounded();
+            HandleJump();
+            HandleJumpGravity();
+        }
+        
         HandleAnimation();
     }
 
     private void FixedUpdate()
     {
-        HandleMovement();
+        if (canMove)
+        {
+            if (isDodging)
+            {
+                HandleDodge();
+            }
+            else
+            {
+                HandleMovement();
+            }
+        }
     }
 
     private void CheckGrounded()
@@ -92,10 +137,26 @@ public class AC_PlayerController : MonoBehaviour
         Vector3 moveDirection = (camForward * moveInput.y + camRight * moveInput.x).normalized;
 
         // Rotation
-        if (moveDirection != Vector3.zero)
+        if (targeting != null && targeting.IsTargeting && targeting.CurrentTarget != null)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime);
+            Vector3 targetDirection = targeting.CurrentTarget.position - transform.position;
+            targetDirection.y = 0.0f;
+
+            if (targetDirection.sqrMagnitude > 0.01f)
+            {
+                targetDirection.Normalize();
+
+                Quaternion targetRotation = Quaternion.LookRotation(targetDirection);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime);
+            }
+        }
+        else
+        {
+            if (moveDirection != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime);
+            }
         }
 
         // Speed Apply
@@ -114,6 +175,76 @@ public class AC_PlayerController : MonoBehaviour
             vel.y = jumpPower;
             SetLinearVelocity(vel);
             jumpInput = false;
+        }
+    }
+
+    private void HandleJumpGravity()
+    {
+        if (isGrounded) return;
+
+        Vector3 velocity = GetLinearVelocity();
+
+        if (velocity.y < 0.0f)
+        {
+            rb.AddForce(Physics.gravity * (fallGravityMultiplier - 1.0f), ForceMode.Acceleration);
+        }
+        else if (velocity.y > 0.0f && !jumpInput)
+        {
+            rb.AddForce(Physics.gravity * (lowJumpGravityMultiplier - 1.0f), ForceMode.Acceleration);
+        }
+    }
+
+    private void StartDodge()
+    {
+        if (isDodging)
+            return;
+
+        isDodging = true;
+        dodgeTimer = dodgeDuration;
+
+        if (moveInput != Vector2.zero)
+        {
+            Vector3 camForward = mainCameraTransform.forward;
+            Vector3 camRight = mainCameraTransform.right;
+
+            camForward.y = 0.0f;
+            camRight.y = 0.0f;
+
+            camForward.Normalize();
+            camRight.Normalize();
+
+            dodgeDirection =
+                (camForward * moveInput.y +
+                camRight * moveInput.x).normalized;
+        }
+        else
+        {
+            dodgeDirection = transform.forward;
+        }
+    }
+
+    private void HandleDodge()
+    {
+        dodgeTimer -= Time.fixedDeltaTime;
+
+        Vector3 velocity = dodgeDirection *
+                        (dodgeDistance / dodgeDuration);
+
+        velocity.y = GetLinearVelocity().y;
+
+        SetLinearVelocity(velocity);
+
+        if (dodgeTimer <= 0.0f)
+        {
+            isDodging = false;
+
+            // Shift를 계속 누르고 있으면 달리기
+            if (sprintHeld &&
+                player.Stemina() > 0.0f &&
+                !player.isStaminaExhausted)
+            {
+                player.isSprint = true;
+            }
         }
     }
 
@@ -172,13 +303,16 @@ public class AC_PlayerController : MonoBehaviour
 
         //=====Components=====//
         if (player == null) player = AC_Player.Instance;
+        if (targeting == null) targeting = GetComponent<AC_TargetingController>();
 
         if (player == null) Debug.LogError("AC_Player를 찾을 수 없습니다.");
+        if (targeting == null) Debug.LogError("AC_TargetingController를 찾을 수 없습니다.");
         //====================//
+
+        canMove = true;
     }
     //======================================//
 
-    #region Input Value Functions
     //======================================//
     public void OnMove(InputAction.CallbackContext context)
     {
@@ -196,20 +330,28 @@ public class AC_PlayerController : MonoBehaviour
     {
         if (player == null) return;
 
-        if (context.performed)
+        if (context.started)
         {
-            if (player.Stemina() > 0.0f && !player.isStaminaExhausted)
-            {
-                sprintInput = context.ReadValue<float>();
-                player.isSprint = true;
-            }
+            if (player.isStaminaExhausted)
+                return;
+
+            if (player.Stemina() <= 0.0f)
+                return;
+
+            // 시작 스테미나 즉시 소모
+            if (!player.UseStamina(sprintStartStaminaCost))
+                return;
+
+            sprintHeld = true;
+
+            StartDodge();
         }
+
         else if (context.canceled)
         {
-            sprintInput = 0.0f;
+            sprintHeld = false;
             player.isSprint = false;
         }
     }
     //======================================//
-    #endregion
 }

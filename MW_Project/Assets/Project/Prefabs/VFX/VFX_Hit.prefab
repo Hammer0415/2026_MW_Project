@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 7662125359088062068}
   - component: {fileID: 4495297213388641976}
   m_Layer: 0
-  m_Name: Hit VFX
+  m_Name: VFX_Hit
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5126,7 +5126,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 2
+      scalar: 3
       minScalar: 1
       maxCurve:
         serializedVersion: 2
@@ -14915,7 +14915,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 1.5
+      scalar: 2.5
       minScalar: 1
       maxCurve:
         serializedVersion: 2

@@ -17,6 +17,9 @@ UI 스크립트(UI 관련 스크립트) - UI_
 머티리얼 - M_
 애니메이션 컨트롤러 - AnimController_
 애니메이션 - Anim_
+이펙트 - VFX_
+사운드 이펙트 - SFX_
+배경음 - BGM_
 
 -씬-
 LV_

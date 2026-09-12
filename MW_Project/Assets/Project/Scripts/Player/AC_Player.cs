@@ -6,6 +6,10 @@ public class AC_Player : MonoBehaviour
     public static AC_Player Instance { get; private set; }
     //===================//
 
+    //=====Components=====//
+    private MG_Game gameManager = null;
+    //====================//
+
     //=====PlayerValues=====//
     [Header("Player Settings")]
     [Tooltip("플레이어 최대 체력")]
@@ -18,6 +22,8 @@ public class AC_Player : MonoBehaviour
     [SerializeField] private float decreaseStemina = 0.0f;
     [Tooltip("스테미나 자동 회복값")]
     [SerializeField] private float chargeStamina = 0.0f;
+    [Tooltip("스테미나 회복 딜레이")]
+    [SerializeField] private float staminaRecoveryDelay = 0.0f;
 
     // Using in UI
     public float HP() => hp > 0.0f ? curHp / hp : 0.0f;
@@ -29,6 +35,10 @@ public class AC_Player : MonoBehaviour
     [HideInInspector] public bool isStaminaExhausted = false;
     [HideInInspector] public bool isDead = false;
     //======================//
+
+    //=====OtherSettings=====//
+    private float staminaRecoveryTimer = 0.0f;
+    //===================//
 
     private void Awake()
     {
@@ -44,6 +54,7 @@ public class AC_Player : MonoBehaviour
     private void Update()
     {
         HandleStamina();
+        HandleDead();
     }
 
     public void TakeDamage(float damage)
@@ -61,16 +72,25 @@ public class AC_Player : MonoBehaviour
         if (isSprint)
         {
             curStemina -= decreaseStemina * Time.deltaTime;
+            staminaRecoveryTimer = staminaRecoveryDelay;
 
             if (curStemina <= 0.0f)
             {
+                curStemina = 0.0f;
                 isSprint = false;
                 isStaminaExhausted = true;
             }
         }
         else
         {
-            curStemina += chargeStamina * Time.deltaTime;
+            if (staminaRecoveryTimer > 0.0f)
+            {
+                staminaRecoveryTimer -= Time.deltaTime;
+            }
+            else
+            {
+                curStemina += chargeStamina * Time.deltaTime;
+            }
 
             if (isStaminaExhausted && Stemina() >= 0.2f)
             {
@@ -81,9 +101,30 @@ public class AC_Player : MonoBehaviour
         curStemina = Mathf.Clamp(curStemina, 0.0f, stemina);
     }
 
+    public bool UseStamina(float amount)
+    {
+        if (curStemina < amount)
+            return false;
+
+        curStemina -= amount;
+        return true;
+    }
+
+    private void HandleDead()
+    {
+        if (curHp <= 0.0f)
+        {
+            gameManager.isPlayerDead = true;
+        }
+    }
+
     //======================================//
     private void StartInitSetup()
     {
+        if (gameManager == null) gameManager = MG_Game.Instance;
+
+        if (gameManager == null) Debug.LogError("MG_Game를 찾을 수 없습니다.");
+
         curHp = hp;
         curStemina = stemina;
 

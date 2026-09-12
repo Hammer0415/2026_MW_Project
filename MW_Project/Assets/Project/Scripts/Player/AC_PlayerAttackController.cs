@@ -5,6 +5,8 @@ public class AC_PlayerAttackController : MonoBehaviour
 {
     //=====Components=====//
     private AC_PlayerController controller;
+    private AC_TargetingController targeting;
+    private MG_Audio audioManager;
     //====================//
 
     //=====AttackValues=====//
@@ -23,6 +25,12 @@ public class AC_PlayerAttackController : MonoBehaviour
     [SerializeField] private float autoTargetRotateSpeed = 0.0f;
     //======================//
 
+    //=====WeaponSetting=====//
+    [Header("Weapon Settings")]
+    [Tooltip("총알 발사 위치 (총구 Transform)")]
+    [SerializeField] private Transform muzzlePoint;
+    //=======================//
+
     //=====VFXSettings=====//
     [Header("VFX Settings")]
     [Tooltip("적 피격 시 생성할 히트 이펙트 프리팹")]
@@ -31,17 +39,11 @@ public class AC_PlayerAttackController : MonoBehaviour
     [SerializeField] private float hitEffectDestroyTime = 1.0f;
     //======================//
 
-    //=====WeaponSetting=====//
-    [Header("Weapon Settings")]
-    [Tooltip("총알 발사 위치 (총구 Transform)")]
-    [SerializeField] private Transform muzzlePoint;
-    //=======================//
-
     //=====CheckingVars=====//
     private bool isRotatingToTarget = false;
     //======================//
 
-    //=====Others=====//
+    //=====OtherSettings=====//
     private float lastAttackTime = 0.0f;
     private Transform currentTarget = null;
     private Quaternion targetRotation;
@@ -54,7 +56,8 @@ public class AC_PlayerAttackController : MonoBehaviour
 
     private void Update()
     {
-        currentTarget = FindNearestEnemyInFOV();
+        if (targeting != null && targeting.IsTargeting) currentTarget = targeting.CurrentTarget;
+        else currentTarget = FindNearestEnemyInFOV();
 
         RotateTowardsTarget();
     }
@@ -74,6 +77,8 @@ public class AC_PlayerAttackController : MonoBehaviour
         if (Time.time < lastAttackTime + attackCooldown) return;
 
         lastAttackTime = Time.time;
+
+        if (audioManager != null) audioManager.PlayPlayerDefaultAttack();
 
         if (currentTarget != null)
         {
@@ -145,21 +150,15 @@ public class AC_PlayerAttackController : MonoBehaviour
     private void PerformHit(Transform target)
     {
         AC_Enemy enemy = target.GetComponent<AC_Enemy>();
+
         if (enemy != null)
         {
             enemy.TakeDamage(attackDamage);
 
-            Vector3 origin = muzzlePoint != null ? muzzlePoint.position : transform.position + Vector3.up * 1.2f;
-            Vector3 dirToTarget = (target.position + Vector3.up * 1.0f - origin).normalized;
+            Vector3 hitPosition = enemy.targetPoint != null ? enemy.targetPoint.position : target.position + Vector3.up * 1.0f;
+            Vector3 direction = (hitPosition - transform.position).normalized;
 
-            if (Physics.Raycast(origin, dirToTarget, out RaycastHit hit, attackRange + 2.0f, enemyLayer))
-            {
-                SpawnHitEffect(hit.point, hit.normal);
-            }
-            else
-            {
-                SpawnHitEffect(target.position + Vector3.up * 1.0f, -dirToTarget);
-            }
+            SpawnHitEffect(hitPosition, -direction);
 
             Debug.Log($"[{target.name}]에게 {attackDamage} 데미지 타격!");
         }
@@ -190,28 +189,6 @@ public class AC_PlayerAttackController : MonoBehaviour
         Destroy(effectInstance, hitEffectDestroyTime);
     }
 
-    private void OnDrawGizmosSelected()
-    {
-        // 1. 전체 공격 거리 원 표시
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(transform.position, attackRange);
-
-        // 2. 시야각(FOV) 부채꼴 영역 표시
-        Gizmos.color = Color.yellow;
-        Vector3 leftBoundary = DirFromAngle(-attackFOV * 0.5f, false);
-        Vector3 rightBoundary = DirFromAngle(attackFOV * 0.5f, false);
-
-        Gizmos.DrawLine(transform.position, transform.position + leftBoundary * attackRange);
-        Gizmos.DrawLine(transform.position, transform.position + rightBoundary * attackRange);
-
-        // 3. 감지된 타겟 표시
-        if (currentTarget != null)
-        {
-            Gizmos.color = Color.red;
-            Gizmos.DrawLine(transform.position, currentTarget.position);
-        }
-    }
-
     private Vector3 DirFromAngle(float angleInDegrees, bool angleIsGlobal)
     {
         if (!angleIsGlobal)
@@ -225,8 +202,31 @@ public class AC_PlayerAttackController : MonoBehaviour
     private void StartInitSetup()
     {
         if (controller == null) controller = gameObject.GetComponent<AC_PlayerController>();
+        if (targeting == null) targeting = GetComponent<AC_TargetingController>();
+        if (audioManager == null) audioManager = MG_Audio.Instance;
 
         if (controller == null) Debug.LogError("AC_PlayerController 찾을 수 없습니다.");
+        if (targeting == null) Debug.LogError("AC_TargetingController를 찾을 수 없습니다.");
+        if (audioManager == null) Debug.LogError("MG_Audio를 찾을 수 없습니다.");
     }
     //======================================//
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, attackRange);
+
+        Gizmos.color = Color.yellow;
+        Vector3 leftBoundary = DirFromAngle(-attackFOV * 0.5f, false);
+        Vector3 rightBoundary = DirFromAngle(attackFOV * 0.5f, false);
+
+        Gizmos.DrawLine(transform.position, transform.position + leftBoundary * attackRange);
+        Gizmos.DrawLine(transform.position, transform.position + rightBoundary * attackRange);
+
+        if (currentTarget != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(transform.position, currentTarget.position);
+        }
+    }
 }

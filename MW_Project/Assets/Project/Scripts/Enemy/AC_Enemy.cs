@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class AC_Enemy : MonoBehaviour
 {
@@ -20,6 +21,8 @@ public class AC_Enemy : MonoBehaviour
     //=====UI=====//
     [Header("Enemy UIs")]
     [SerializeField] private Slider enemyHpBar = null;
+    [SerializeField] private TextMeshProUGUI hpText = null;
+    public Transform targetPoint = null;
     //============//
 
     //=====CheckingVars=====//
@@ -29,7 +32,6 @@ public class AC_Enemy : MonoBehaviour
     private void Awake()
     {
         if (Instance == null) Instance = this;
-        else Destroy(gameObject);
     }
 
     private void Start()
@@ -40,21 +42,38 @@ public class AC_Enemy : MonoBehaviour
     private void Update()
     {
         HandleEnemyUI();
+        HandleDead();
     }
 
     public void TakeDamage(float damage)
     {
-        if (curHp > 0.0f)
-        {
-            curHp -= damage;
-        }
+        if (curHp <= 0.0f)
+            return;
 
+        curHp -= damage;
         curHp = Mathf.Clamp(curHp, 0.0f, hp);
+
+        AC_EnemyController controller =
+            GetComponent<AC_EnemyController>();
+
+        if (controller != null)
+        {
+            controller.OnHitByPlayer();
+        }
+    }
+
+    private void HandleDead()
+    {
+        if (curHp <= 0.0f)
+        {
+            Destroy(this.gameObject);
+        }
     }
 
     private void HandleEnemyUI()
     {
-        enemyHpBar.value = HP();
+        if (enemyHpBar) enemyHpBar.value = HP();
+        if (hpText) hpText.text = curHp.ToString("F0");
     }
 
     //======================================//
