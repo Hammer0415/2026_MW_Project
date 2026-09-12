@@ -1,5 +1,4 @@
 using UnityEngine;
-using System.Collections;
 
 public class AC_EnemyController : MonoBehaviour
 {
@@ -13,7 +12,9 @@ public class AC_EnemyController : MonoBehaviour
     //=====Components=====//
     private Rigidbody rb = null;
     private CapsuleCollider collider = null;
+    private Animator animator = null;
     private AC_Enemy enemy = null;
+    private MG_Game gameManager = null;
     //====================//
 
     //=====ReferenceVars=====//
@@ -34,18 +35,20 @@ public class AC_EnemyController : MonoBehaviour
     [Header("Enemy State")]
     [Tooltip("적 상태")]
     [SerializeField] private EnemyState currentState = EnemyState.Idle;
+    [Tooltip("적 약점 표시 오브젝트")]
+    [SerializeField] private GameObject weakPoint = null;
+
+    public bool IsWeakPointActive => weakPoint != null && weakPoint.activeSelf;
     //=====================//
 
     //=====AISetting=====//
     [Header("AI Settings")]
     [Tooltip("플레이어 감지 거리")]
     [SerializeField] private float detectionRange = 0.0f;
-    [Tooltip("공격 범위")]
+    [Tooltip("공격 트리거 범위")]
     [SerializeField] private float attackRange = 0.0f;
     [Tooltip("이동 속도")]
     [SerializeField] private float moveSpeed = 0.0f;
-    [Tooltip("공격 쿨타임")]
-    [SerializeField] private float attackCooldown = 0.0f;
     [Tooltip("방향 회전 속도")]
     [SerializeField] private float rotationSpeed = 0.0f;
     //===================//
@@ -53,18 +56,24 @@ public class AC_EnemyController : MonoBehaviour
     //=====AttackSettings=====//
     [Header("Attack Settings")]
     [Tooltip("공격 범위")]
+    [SerializeField] private float attackHitRange = 0.0f;
+    [Tooltip("공격 데미지")]
     [SerializeField] private float attackDamage = 0.0f;
+    [Tooltip("공격 판정 위치")]
+    [SerializeField] private Transform attackPoint;
     [Tooltip("공격 딜레이")]
     [SerializeField] private float attackDelay = 0.0f;
+    [Tooltip("플레이어 레이어")]
+    [SerializeField] private LayerMask playerLayer;
     //========================//
 
     //=====CheckingVars=====//
-    private bool isAttacking = false;
+    private bool isInBattle = false;
     //======================//
 
     //=====OtherSettings=====//
-    private Transform playerTarget;
     private float attackTimer = 0.0f;
+    private Transform playerTarget;
     //=======================//
 
     private void Awake()
@@ -91,8 +100,13 @@ public class AC_EnemyController : MonoBehaviour
             if (playerTarget == null)
                 return;
 
-            UpdateAttackTimer();
+            if (attackTimer > 0.0f)
+            {
+                attackTimer -= Time.deltaTime;
+            }
+
             UpdateAggroTimer();
+            UpdateBattleState();
             UpdateState();
 
             switch (currentState)
@@ -156,8 +170,7 @@ public class AC_EnemyController : MonoBehaviour
 
     private void HandleChase()
     {
-        if (playerTarget == null)
-            return;
+        if (playerTarget == null) return;
 
         Vector3 direction = playerTarget.position - transform.position;
         direction.y = 0.0f;
@@ -176,11 +189,40 @@ public class AC_EnemyController : MonoBehaviour
         RotateToPlayer(direction);
     }
 
+    public void OnAttackHit()
+    {
+        if (playerTarget == null) return;
+
+        Vector3 hitPosition = attackPoint != null ? attackPoint.position : transform.position;
+
+        Collider[] players = Physics.OverlapSphere(hitPosition, attackHitRange, playerLayer);
+
+        foreach (Collider playerCollider in players)
+        {
+            AC_Player player = playerCollider.GetComponentInParent<AC_Player>();
+            AC_PlayerController playerController = playerCollider.GetComponent<AC_PlayerController>();
+
+            if (player == null) continue;
+
+            if (playerController.IsPerfectDodge())
+            {
+                if (weakPoint == null) return;
+
+                weakPoint.SetActive(true);
+
+                return;
+            }
+
+            player.TakeDamage(attackDamage);
+            Debug.Log($"Enemy Attack Hit! Damage : {attackDamage}");
+            break;
+        }
+    }
+
     private void HandleAttack()
     {
         StopMovement();
-        if (playerTarget == null)
-            return;
+        if (playerTarget == null) return;
 
         Vector3 direction = playerTarget.position - transform.position;
         direction.y = 0.0f;
@@ -190,41 +232,12 @@ public class AC_EnemyController : MonoBehaviour
             RotateToPlayer(direction.normalized);
         }
 
-        if (attackTimer <= 0f && !isAttacking)
-        {
-            StartCoroutine(AttackCoroutine());
-        }
-    }
+        if (attackTimer > 0.0f) return;
 
-    private IEnumerator AttackCoroutine()
-    {
-        isAttacking = true;
-        Debug.Log("Enemy Attack Start");
+        if (animator == null) return;
+        animator.SetTrigger("isAttack");
 
-        yield return new WaitForSeconds(attackDelay);
-
-        if (playerTarget != null)
-        {
-            float distance = Vector3.Distance(
-                transform.position,
-                playerTarget.position
-            );
-
-            if (distance <= attackRange)
-            {
-                AC_Player player = playerTarget.GetComponent<AC_Player>();
-
-                if (player != null)
-                {
-                    player.TakeDamage(attackDamage);
-                    Debug.Log("Enemy hit Player : " + attackDamage);
-                }
-            }
-        }
-
-        attackTimer = attackCooldown;
-        isAttacking = false;
-        Debug.Log("Enemy Attack End");
+        attackTimer = attackDelay;
     }
 
     private void UpdateAggroTimer()
@@ -242,23 +255,28 @@ public class AC_EnemyController : MonoBehaviour
     {
         aggroTimer = aggroDuration;
 
-        Debug.Log(
-            $"[{gameObject.name}] 플레이어 피격 → 어그로 시작 ({aggroDuration}초)"
-        );
+        if (weakPoint.activeSelf) weakPoint.SetActive(false);
     }
 
-    //======================================//
-    private void UpdateAttackTimer()
+    private void UpdateBattleState()
     {
-        if (attackTimer > 0.0f)
-        {
-            attackTimer -= Time.deltaTime;
+        if (playerTarget == null || gameManager == null) return;
 
-            if (attackTimer < 0.0f)
-                attackTimer = 0.0f;
+        bool shouldBeInBattle = IsAggro() || Vector3.Distance(transform.position, playerTarget.position) <= detectionRange;
+
+        if (shouldBeInBattle && !isInBattle)
+        {
+            isInBattle = true;
+            gameManager.EnterBattle();
+        }
+        else if (!shouldBeInBattle && isInBattle)
+        {
+            isInBattle = false;
+            gameManager.ExitBattle();
         }
     }
 
+    //======================================//
     private bool IsAggro()
     {
         return aggroTimer > 0.0f;
@@ -319,16 +337,24 @@ public class AC_EnemyController : MonoBehaviour
     {
         if (rb == null) rb = GetComponent<Rigidbody>();
         if (collider == null) collider = GetComponent<CapsuleCollider>();
-        if (enemy == null) enemy = GetComponent<AC_Enemy>();
+        if (animator == null) animator = GetComponent<Animator>();
 
         if (rb == null) Debug.LogError("Rigidbody를 찾을 수 없습니다.", this);
         if (collider == null) Debug.LogError("CapsuleCollider를 찾을 수 없습니다.", this);
-        if (enemy == null) Debug.LogError("AC_Enemy를 찾을 수 없습니다.", this);
+        if (animator == null) Debug.LogError("Animator를 찾을 수 없습니다.", this);
     }
 
     private void InitStartSetup()
     {
+        if (enemy == null) enemy = GetComponent<AC_Enemy>();
+        if (gameManager == null) gameManager = MG_Game.Instance;
+
+        if (enemy == null) Debug.LogError("AC_Enemy를 찾을 수 없습니다.", this);
+        if (gameManager == null) Debug.LogError("MG_Game을 찾을 수 없습니다.", this);
+
         canMove = true;
+
+        if (weakPoint) weakPoint.SetActive(false);
     }
     //======================================//
 
@@ -336,16 +362,16 @@ public class AC_EnemyController : MonoBehaviour
     {
         Gizmos.color = Color.yellow;
 
-        Gizmos.DrawWireSphere(
-            transform.position,
-            detectionRange
-        );
+        Gizmos.DrawWireSphere(transform.position, detectionRange);
 
         Gizmos.color = Color.red;
 
-        Gizmos.DrawWireSphere(
-            transform.position,
-            attackRange
-        );
+        Gizmos.DrawWireSphere(transform.position, attackRange);
+
+        Gizmos.color = Color.magenta;
+
+        Vector3 hitPosition = attackPoint != null ? attackPoint.position : transform.position;
+
+        Gizmos.DrawWireSphere(hitPosition, attackHitRange);
     }
 }

@@ -4,6 +4,6 @@ public class AC_EnemyHpBarController : MonoBehaviour
 {
     private void Update()
     {
-        transform.LookAt(Camera.main.transform);
+        transform.rotation = Quaternion.LookRotation(transform.position - Camera.main.transform.position);
     }
 }

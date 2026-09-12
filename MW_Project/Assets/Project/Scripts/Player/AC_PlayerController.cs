@@ -8,6 +8,7 @@ public class AC_PlayerController : MonoBehaviour
     private CapsuleCollider collider = null;
     private AC_Player player = null;
     private AC_TargetingController targeting = null;
+    private AC_PlayerWeakPointController weakPoint;
 
     [Header("Animation Settings")]
     [Tooltip("애니메이터 컴포넌트")]
@@ -42,6 +43,8 @@ public class AC_PlayerController : MonoBehaviour
     [SerializeField] private float dodgeDistance = 0.0f;
     [Tooltip("회피 지속 시간")]
     [SerializeField] private float dodgeDuration = 0.0f;
+    [Tooltip("대시 입력 직후 이동 입력을 기다리는 시간")]
+    [SerializeField] private float dodgeInputBufferTime = 0.0f;
 
     [Header("Jump Settings")]
     [Tooltip("플레이어 점프 파워")]
@@ -64,11 +67,14 @@ public class AC_PlayerController : MonoBehaviour
     private bool isGrounded = false;
     private bool sprintHeld = false;
     private bool isDodging = false;
+    private bool dodgeDirectionReady = false;
+    private bool canPerfectDodge = false;
     //======================//
 
     //=====OtherSettings=====//
     private float dodgeTimer = 0.0f;
     private Vector3 dodgeDirection = Vector3.zero;
+    private float dodgeInputBufferTimer = 0.0f;
     //===================//
 
     private void Awake()
@@ -127,14 +133,7 @@ public class AC_PlayerController : MonoBehaviour
         }
 
         // Movement
-        Vector3 camForward = mainCameraTransform.forward;
-        Vector3 camRight = mainCameraTransform.right;
-        camForward.y = 0.0f;
-        camRight.y = 0.0f;
-        camForward.Normalize();
-        camRight.Normalize();
-
-        Vector3 moveDirection = (camForward * moveInput.y + camRight * moveInput.x).normalized;
+        Vector3 moveDirection = GetMoveDirection();
 
         // Rotation
         if (targeting != null && targeting.IsTargeting && targeting.CurrentTarget != null)
@@ -196,40 +195,53 @@ public class AC_PlayerController : MonoBehaviour
 
     private void StartDodge()
     {
-        if (isDodging)
-            return;
+        if (isDodging) return;
 
         isDodging = true;
+        canPerfectDodge = true;
         dodgeTimer = dodgeDuration;
 
-        if (moveInput != Vector2.zero)
+        Vector3 moveDirection = GetMoveDirection();
+
+        if (moveDirection != Vector3.zero)
         {
-            Vector3 camForward = mainCameraTransform.forward;
-            Vector3 camRight = mainCameraTransform.right;
-
-            camForward.y = 0.0f;
-            camRight.y = 0.0f;
-
-            camForward.Normalize();
-            camRight.Normalize();
-
-            dodgeDirection =
-                (camForward * moveInput.y +
-                camRight * moveInput.x).normalized;
+            dodgeDirection = moveDirection;
+            dodgeDirectionReady = true;
+            dodgeInputBufferTimer = 0.0f;
         }
         else
         {
             dodgeDirection = transform.forward;
+            dodgeDirectionReady = false;
+            dodgeInputBufferTimer = dodgeInputBufferTime;
         }
     }
 
     private void HandleDodge()
     {
+        if (!dodgeDirectionReady)
+        {
+            dodgeInputBufferTimer -= Time.fixedDeltaTime;
+
+            Vector3 moveDirection = GetMoveDirection();
+
+            if (moveDirection != Vector3.zero)
+            {
+                dodgeDirection = moveDirection;
+                dodgeDirectionReady = true;
+            }
+            else if (dodgeInputBufferTimer <= 0.0f)
+            {
+                dodgeDirection = transform.forward;
+                dodgeDirectionReady = true;
+            }
+
+            if (!dodgeDirectionReady) return;
+        }
+
         dodgeTimer -= Time.fixedDeltaTime;
 
-        Vector3 velocity = dodgeDirection *
-                        (dodgeDistance / dodgeDuration);
-
+        Vector3 velocity = dodgeDirection * (dodgeDistance / dodgeDuration);
         velocity.y = GetLinearVelocity().y;
 
         SetLinearVelocity(velocity);
@@ -237,15 +249,26 @@ public class AC_PlayerController : MonoBehaviour
         if (dodgeTimer <= 0.0f)
         {
             isDodging = false;
+            canPerfectDodge = false;
+            dodgeDirectionReady = false;
 
-            // Shift를 계속 누르고 있으면 달리기
-            if (sprintHeld &&
-                player.Stemina() > 0.0f &&
-                !player.isStaminaExhausted)
+            if (sprintHeld && player.Stemina() > 0.0f && !player.isStaminaExhausted)
             {
                 player.isSprint = true;
             }
         }
+    }
+
+    public bool IsPerfectDodge()
+    {
+        if (!canPerfectDodge) return false;
+
+        canPerfectDodge = false;
+        Debug.Log("PERFECT DODGE!");
+
+        if (weakPoint != null) weakPoint.ActivateWeakPoint();
+
+        return true;
     }
 
     private void HandleAnimation()
@@ -253,10 +276,8 @@ public class AC_PlayerController : MonoBehaviour
         if (animator == null) return;
 
         bool isMoving = moveInput != Vector2.zero;
-
         bool isWalk = isMoving && !player.isSprint;
         bool isRun = isMoving && player.isSprint;
-
         bool isJump = !isGrounded;
 
         animator.SetBool("isWalk", isWalk);
@@ -282,6 +303,22 @@ public class AC_PlayerController : MonoBehaviour
         rb.velocity = velocity;
 #endif
     }
+
+    private Vector3 GetMoveDirection()
+    {
+        if (moveInput == Vector2.zero) return Vector3.zero;
+
+        Vector3 camForward = mainCameraTransform.forward;
+        Vector3 camRight = mainCameraTransform.right;
+
+        camForward.y = 0.0f;
+        camRight.y = 0.0f;
+
+        camForward.Normalize();
+        camRight.Normalize();
+
+        return (camForward * moveInput.y + camRight * moveInput.x).normalized;
+    }
     //======================================//
 
     //======================================//
@@ -304,9 +341,11 @@ public class AC_PlayerController : MonoBehaviour
         //=====Components=====//
         if (player == null) player = AC_Player.Instance;
         if (targeting == null) targeting = GetComponent<AC_TargetingController>();
+        if (weakPoint == null) weakPoint = GetComponent<AC_PlayerWeakPointController>();
 
         if (player == null) Debug.LogError("AC_Player를 찾을 수 없습니다.");
         if (targeting == null) Debug.LogError("AC_TargetingController를 찾을 수 없습니다.");
+        if (weakPoint == null) Debug.LogError("AC_PlayerWeakPointController를 찾을 수 없습니다.");
         //====================//
 
         canMove = true;
@@ -332,15 +371,9 @@ public class AC_PlayerController : MonoBehaviour
 
         if (context.started)
         {
-            if (player.isStaminaExhausted)
-                return;
-
-            if (player.Stemina() <= 0.0f)
-                return;
-
-            // 시작 스테미나 즉시 소모
-            if (!player.UseStamina(sprintStartStaminaCost))
-                return;
+            if (player.isStaminaExhausted) return;
+            if (player.Stemina() <= 0.0f) return;
+            if (!player.UseStamina(sprintStartStaminaCost)) return;
 
             sprintHeld = true;
 

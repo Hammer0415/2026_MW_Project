@@ -16,23 +16,24 @@ public class AC_TargetingController : MonoBehaviour
     public bool IsTargeting => currentTarget != null;
     //=======================//
 
-    //===== Target =====//
+    //=====TargetSettings=====//
     [Header("Target Settings")]
     [SerializeField] private float targetRange = 0.0f;
     [SerializeField] private float targetAngle = 0.0f;
-    //==================//
-
-    //===== Enemy Layer =====//
     [Header("Target Layer")]
     [SerializeField] private LayerMask targetLayer;
-    //=======================//
+    //========================//
 
-    //===== UI =====//
+    //=====UISettings=====//
     [Space(20)]
     [Header("Target UI")]
     [Tooltip("적 바디에 띄워질 타겟팅 UI")]
     [SerializeField] private RectTransform targetMarker;
-    //================//
+    //====================//
+
+    //=====CheckingVars=====//
+    private bool targetingActive = false;
+    //======================//
 
     private void Awake()
     {
@@ -41,13 +42,15 @@ public class AC_TargetingController : MonoBehaviour
 
     private void Update()
     {
+        CheckCurrentTarget();
         UpdateTargetMarker();
     }
 
     private void ToggleTargeting()
     {
-        if (currentTarget != null)
+        if (targetingActive)
         {
+            targetingActive = false;
             ClearTarget();
             return;
         }
@@ -56,6 +59,7 @@ public class AC_TargetingController : MonoBehaviour
 
         if (target != null)
         {
+            targetingActive = true;
             SetTarget(target);
         }
     }
@@ -71,7 +75,7 @@ public class AC_TargetingController : MonoBehaviour
         {
             AC_Enemy enemy = targetCollider.GetComponent<AC_Enemy>();
 
-            if (enemy == null) continue;
+            if (enemy == null || enemy.isDead) continue;
 
             Transform target = enemy.transform;
             Vector3 direction = target.position - mainCamera.transform.position;
@@ -132,6 +136,57 @@ public class AC_TargetingController : MonoBehaviour
         Vector3 targetPosition = targetEnemy.targetPoint.position;
         Vector3 screenPosition = mainCamera.WorldToScreenPoint(targetPosition);
         targetMarker.position = screenPosition;
+    }
+
+    private void CheckCurrentTarget()
+    {
+        if (!targetingActive) return;
+
+        if (currentTarget == null)
+        {
+            TryAutoTarget();
+            return;
+        }
+
+        AC_Enemy enemy = currentTarget.GetComponent<AC_Enemy>();
+
+        if (enemy == null || enemy.isDead)
+        {
+            currentTarget = null;
+            TryAutoTarget();
+            return;
+        }
+
+        float distance = Vector3.Distance(transform.position, currentTarget.position);
+
+        if (distance > targetRange)
+        {
+            targetingActive = false;
+            ClearTarget();
+            return;
+        }
+    }
+
+    private void TryAutoTarget()
+    {
+        if (!targetingActive) return;
+
+        MG_Game gameManager = MG_Game.Instance;
+
+        if (gameManager == null) return;
+        if (!gameManager.isBattle) return;
+
+        Transform target = FindBestTarget();
+
+        if (target != null)
+        {
+            SetTarget(target);
+        }
+        else
+        {
+            targetingActive = false;
+            ClearTarget();
+        }
     }
 
     //======================================//

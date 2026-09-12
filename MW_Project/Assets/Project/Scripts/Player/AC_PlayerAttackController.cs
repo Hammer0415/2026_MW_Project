@@ -7,6 +7,7 @@ public class AC_PlayerAttackController : MonoBehaviour
     private AC_PlayerController controller;
     private AC_TargetingController targeting;
     private MG_Audio audioManager;
+    private AC_PlayerWeakPointController weakPoint;
     //====================//
 
     //=====AttackValues=====//
@@ -27,20 +28,25 @@ public class AC_PlayerAttackController : MonoBehaviour
 
     //=====WeaponSetting=====//
     [Header("Weapon Settings")]
-    [Tooltip("총알 발사 위치 (총구 Transform)")]
-    [SerializeField] private Transform muzzlePoint;
+    [Tooltip("왼손 권총 총구")]
+    [SerializeField] private Transform leftMuzzlePoint;
+    [Tooltip("오른손 권총 총구")]
+    [SerializeField] private Transform rightMuzzlePoint;
     //=======================//
 
     //=====VFXSettings=====//
     [Header("VFX Settings")]
     [Tooltip("적 피격 시 생성할 히트 이펙트 프리팹")]
     [SerializeField] private GameObject hitEffectPrefab;
+    [Tooltip("적 공격 시 생성할 총기 이펙트 프리팹")]
+    [SerializeField] private GameObject weaponEffectPrefab;
     [Tooltip("히트 이펙트 자동 파괴 시간 (초)")]
     [SerializeField] private float hitEffectDestroyTime = 1.0f;
     //======================//
 
     //=====CheckingVars=====//
     private bool isRotatingToTarget = false;
+    private bool isLeftHandNext = true;
     //======================//
 
     //=====OtherSettings=====//
@@ -56,50 +62,54 @@ public class AC_PlayerAttackController : MonoBehaviour
 
     private void Update()
     {
-        if (targeting != null && targeting.IsTargeting) currentTarget = targeting.CurrentTarget;
-        else currentTarget = FindNearestEnemyInFOV();
+        if (!weakPoint.isWeakPointActive)
+        {
+            if (targeting != null && targeting.IsTargeting) currentTarget = targeting.CurrentTarget;
+            else currentTarget = FindNearestEnemyInFOV();
+        }
+        else
+        {
+            if (!targeting.IsTargeting) currentTarget = FindWeakPointEnemy();
+        }
 
         RotateTowardsTarget();
     }
 
-    public void OnAttack(InputAction.CallbackContext context)
-    {
-        if (context.performed)
-        {
-            TryShoot();
-
-            if (controller) controller.animator.SetTrigger("isAttack");
-        }
-    }
-
-    private void TryShoot()
+    private void TryShoot(float attackDamage)
     {
         if (Time.time < lastAttackTime + attackCooldown) return;
 
         lastAttackTime = Time.time;
+
+        Transform currentMuzzle = isLeftHandNext ? leftMuzzlePoint : rightMuzzlePoint;
+        isLeftHandNext = !isLeftHandNext;
 
         if (audioManager != null) audioManager.PlayPlayerDefaultAttack();
 
         if (currentTarget != null)
         {
             Vector3 targetDir = (currentTarget.position - transform.position).normalized;
-            targetDir.y = 0f;
+            targetDir.y = 0.0f;
 
-            if (targetDir != Vector3.zero)
+            if (targetDir.sqrMagnitude > 0.01f)
             {
                 targetRotation = Quaternion.LookRotation(targetDir);
                 isRotatingToTarget = true;
             }
 
-            PerformHit(currentTarget);
+            PerformHit(currentTarget, attackDamage);
         }
         else
         {
-            PerformRaycastShoot();
+            PerformRaycastShoot(currentMuzzle, attackDamage);
         }
 
-        // 발사 이펙트/사운드 재생 위치
-        Debug.Log("총기 발사!");
+        if (weaponEffectPrefab != null && currentMuzzle != null)
+        {
+            Quaternion weaponEffectRotation = currentTarget == null ? currentMuzzle.rotation : targetRotation;
+            GameObject weaponEffectInstance = Instantiate(weaponEffectPrefab, currentMuzzle.position, weaponEffectRotation);
+            Destroy(weaponEffectInstance, hitEffectDestroyTime);
+        }
     }
 
     private void RotateTowardsTarget()
@@ -143,11 +153,42 @@ public class AC_PlayerAttackController : MonoBehaviour
                 }
             }
         }
-
+        
         return nearest;
     }
 
-    private void PerformHit(Transform target)
+    private Transform FindWeakPointEnemy()
+    {
+        Collider[] enemies = Physics.OverlapSphere(transform.position, attackRange, enemyLayer);
+
+        Transform closestEnemy = null;
+        float closestDistance = Mathf.Infinity;
+
+        foreach (Collider enemyCollider in enemies)
+        {
+            AC_Enemy enemy = enemyCollider.GetComponent<AC_Enemy>();
+
+            if (enemy == null) continue;
+            if (enemy.isDead) continue;
+
+            AC_EnemyController enemyController = enemy.GetComponent<AC_EnemyController>();
+
+            if (enemyController == null) continue;
+            if (!enemyController.IsWeakPointActive) continue;
+
+            float distance = Vector3.Distance(transform.position, enemy.transform.position);
+
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestEnemy = enemy.transform;
+            }
+        }
+
+        return closestEnemy;
+    }
+
+    private void PerformHit(Transform target, float attackDamage)
     {
         AC_Enemy enemy = target.GetComponent<AC_Enemy>();
 
@@ -158,15 +199,15 @@ public class AC_PlayerAttackController : MonoBehaviour
             Vector3 hitPosition = enemy.targetPoint != null ? enemy.targetPoint.position : target.position + Vector3.up * 1.0f;
             Vector3 direction = (hitPosition - transform.position).normalized;
 
-            SpawnHitEffect(hitPosition, -direction);
+            SpawnHitEffect(hitPosition, direction);
 
             Debug.Log($"[{target.name}]에게 {attackDamage} 데미지 타격!");
         }
     }
 
-    private void PerformRaycastShoot()
+    private void PerformRaycastShoot(Transform muzzle, float attackDamage)
     {
-        Vector3 origin = muzzlePoint != null ? muzzlePoint.position : transform.position + Vector3.up * 1.2f;
+        Vector3 origin = muzzle != null ? muzzle.position : transform.position + Vector3.up * 1.2f;
         Vector3 direction = transform.forward;
 
         if (Physics.Raycast(origin, direction, out RaycastHit hit, attackRange, enemyLayer))
@@ -175,6 +216,7 @@ public class AC_PlayerAttackController : MonoBehaviour
             if (enemy != null)
             {
                 enemy.TakeDamage(attackDamage);
+                Debug.Log($"[{enemy.name}]에게 {attackDamage} 데미지 타격!");
             }
         }
     }
@@ -204,10 +246,29 @@ public class AC_PlayerAttackController : MonoBehaviour
         if (controller == null) controller = gameObject.GetComponent<AC_PlayerController>();
         if (targeting == null) targeting = GetComponent<AC_TargetingController>();
         if (audioManager == null) audioManager = MG_Audio.Instance;
+        if (weakPoint == null) weakPoint = GetComponent<AC_PlayerWeakPointController>();
 
         if (controller == null) Debug.LogError("AC_PlayerController 찾을 수 없습니다.");
         if (targeting == null) Debug.LogError("AC_TargetingController를 찾을 수 없습니다.");
         if (audioManager == null) Debug.LogError("MG_Audio를 찾을 수 없습니다.");
+        if (weakPoint == null) Debug.LogError("AC_PlayerWeakPointController를 찾을 수 없습니다.");
+    }
+    //======================================//
+
+    //======================================//
+    public void OnAttack(InputAction.CallbackContext context)
+    {
+        if (!context.performed) return;
+
+        if (weakPoint != null && weakPoint.TryStrongAttack())
+        {
+            TryShoot(attackDamage * weakPoint.strongAttackDamageMultiplier);
+            return;
+        }
+
+        TryShoot(attackDamage);
+
+        if (controller) controller.animator.SetTrigger("isAttack");
     }
     //======================================//
 

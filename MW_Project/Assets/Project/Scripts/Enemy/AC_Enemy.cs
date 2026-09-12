@@ -8,6 +8,10 @@ public class AC_Enemy : MonoBehaviour
     public static AC_Enemy Instance { get; private set; }
     //===================//
 
+    //=====Components=====//
+    private MG_Game gameManager = null;
+    //====================//
+
     //=====EnemyValues=====//
     [Header("Enemy Settings")]
     [Tooltip("적 최대 체력")]
@@ -53,19 +57,23 @@ public class AC_Enemy : MonoBehaviour
         curHp -= damage;
         curHp = Mathf.Clamp(curHp, 0.0f, hp);
 
-        AC_EnemyController controller =
-            GetComponent<AC_EnemyController>();
+        AC_EnemyController controller = GetComponent<AC_EnemyController>();
 
         if (controller != null)
         {
             controller.OnHitByPlayer();
         }
+
+        Debug.Log(damage);
     }
 
     private void HandleDead()
     {
         if (curHp <= 0.0f)
         {
+            if (gameManager == null) return;
+            
+            gameManager.ExitBattle();
             Destroy(this.gameObject);
         }
     }
@@ -79,6 +87,10 @@ public class AC_Enemy : MonoBehaviour
     //======================================//
     private void StartInitSetup()
     {
+        if (gameManager == null) gameManager = MG_Game.Instance;
+
+        if (gameManager == null) Debug.LogError("MG_Game을 찾을 수 없습니다.", this);
+
         curHp = hp;
 
         isDead = false;
