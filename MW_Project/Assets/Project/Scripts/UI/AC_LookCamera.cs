@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class AC_EnemyHpBarController : MonoBehaviour
+public class AC_LookCamera : MonoBehaviour
 {
     private void Update()
     {

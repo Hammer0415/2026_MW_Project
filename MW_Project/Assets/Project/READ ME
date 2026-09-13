@@ -18,6 +18,7 @@ UI 스크립트(UI 관련 스크립트) - UI_
 애니메이션 컨트롤러 - AnimController_
 애니메이션 - Anim_
 이펙트 - VFX_
+쉐이더 그래프 - SG_
 사운드 이펙트 - SFX_
 배경음 - BGM_
 

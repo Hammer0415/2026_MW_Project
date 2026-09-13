@@ -65,6 +65,16 @@
                     "interactions": "",
                     "initialStateCheck": false,
                     "priority": 0
+                },
+                {
+                    "name": "E Skill",
+                    "type": "Button",
+                    "id": "ef233f34-7a26-4d6d-9a17-bd329842ef74",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
                 }
             ],
             "bindings": [
@@ -169,6 +179,17 @@
                 },
                 {
                     "name": "",
+                    "id": "1e21687c-183f-4106-9fd3-b7a8c67fe0df",
+                    "path": "<Gamepad>/buttonSouth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Jump",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "4187a006-5429-4cd4-a26a-605de63d858c",
                     "path": "<Keyboard>/leftShift",
                     "interactions": "",
@@ -180,11 +201,33 @@
                 },
                 {
                     "name": "",
+                    "id": "6cff7f4c-c32f-4387-a625-c994a2d6037e",
+                    "path": "<Gamepad>/leftShoulder",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Sprint",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "e1d03cbc-dceb-485c-9cf2-04f41cb649a8",
                     "path": "<Mouse>/leftButton",
                     "interactions": "",
                     "processors": "",
                     "groups": ";PC",
+                    "action": "Attack",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "80b28df3-1894-43a0-b0e0-97b0c964014e",
+                    "path": "<Gamepad>/buttonWest",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
                     "action": "Attack",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -208,6 +251,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "Targeting",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "03d859de-e45e-4ce8-93da-9ededace611c",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "E Skill",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "a296ad2e-0aa3-4fa3-ab80-3dd5c81b795b",
+                    "path": "<Gamepad>/buttonNorth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "E Skill",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

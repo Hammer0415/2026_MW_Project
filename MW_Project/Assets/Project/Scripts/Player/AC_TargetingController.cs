@@ -13,7 +13,7 @@ public class AC_TargetingController : MonoBehaviour
 
     public Transform CurrentTarget => currentTarget;
 
-    public bool IsTargeting => currentTarget != null;
+    public bool IsTargeting => targetingActive;
     //=======================//
 
     //=====TargetSettings=====//
@@ -109,7 +109,11 @@ public class AC_TargetingController : MonoBehaviour
 
     private void ClearTarget()
     {
-        Debug.Log("Target Unlock : " + currentTarget.name);
+        if (currentTarget != null)
+        {
+            Debug.Log("Target Unlock : " + currentTarget.name);
+        }
+
         currentTarget = null;
     }
 
@@ -144,7 +148,19 @@ public class AC_TargetingController : MonoBehaviour
 
         if (currentTarget == null)
         {
-            TryAutoTarget();
+            Transform target = FindBestTarget();
+
+            if (target != null)
+            {
+                SetTarget(target);
+            }
+            else
+            {
+                targetingActive = false;
+                ClearTarget();
+                Debug.Log("No Target Found");
+            }
+
             return;
         }
 
@@ -152,8 +168,9 @@ public class AC_TargetingController : MonoBehaviour
 
         if (enemy == null || enemy.isDead)
         {
+            Debug.Log("Current Target Dead!");
+
             currentTarget = null;
-            TryAutoTarget();
             return;
         }
 
@@ -163,7 +180,6 @@ public class AC_TargetingController : MonoBehaviour
         {
             targetingActive = false;
             ClearTarget();
-            return;
         }
     }
 

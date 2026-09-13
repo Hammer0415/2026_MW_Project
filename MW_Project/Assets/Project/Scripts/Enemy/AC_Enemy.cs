@@ -63,8 +63,6 @@ public class AC_Enemy : MonoBehaviour
         {
             controller.OnHitByPlayer();
         }
-
-        Debug.Log(damage);
     }
 
     private void HandleDead()

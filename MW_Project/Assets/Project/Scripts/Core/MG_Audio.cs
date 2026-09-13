@@ -56,10 +56,6 @@ public class MG_Audio : MonoBehaviour
     [Range(0.0f, 1.0f)]
     [SerializeField] private float sfxVolume = 1.0f;
     //========================//
-
-    //=====CheckingVar=====//
-    private bool isBattle = false;
-    //=====================//
     
     private enum BGMState
     {

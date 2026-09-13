@@ -221,9 +221,11 @@ public class AC_PlayerAttackController : MonoBehaviour
         }
     }
 
-    private void SpawnHitEffect(Vector3 spawnPosition, Vector3 surfaceNormal)
+    public void SpawnHitEffect(Vector3 spawnPosition, Vector3 surfaceNormal)
     {
         if (hitEffectPrefab == null) return;
+
+        audioManager.PlayPlayerDefaultAttack();
 
         Quaternion hitRotation = Quaternion.LookRotation(surfaceNormal);
 
