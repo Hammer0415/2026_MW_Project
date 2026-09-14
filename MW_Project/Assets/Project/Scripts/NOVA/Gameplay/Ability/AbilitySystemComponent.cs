@@ -1,9 +1,14 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class AbilitySystemComponent : NovaComponent
 {
     [SerializeField] private List<NovaAbility> abilities = new();
+
+    [Header("Tag")]
+    [Tooltip("기본 공격 Ability Tag")]
+    [SerializeField] private GameplayTag basicAttackTag;
 
     private Dictionary<GameplayTag, NovaAbility> abilityMap = new();
 
@@ -12,6 +17,17 @@ public class AbilitySystemComponent : NovaComponent
         base.Awake();
 
         InitializeAbilities();
+    }
+
+    // 기본 공격 입력
+    public void OnBasicAttack(InputAction.CallbackContext context)
+    {
+        TryActivateAbility(basicAttackTag);
+    }
+
+    private void Update()
+    {
+        TickAbilities(Time.deltaTime);
     }
 
     // Ability 초기화
@@ -35,6 +51,19 @@ public class AbilitySystemComponent : NovaComponent
             }
 
             abilityMap.Add(abilityTag, ability);
+        }
+    }
+
+    // Ability 쿨타임 갱신
+    private void TickAbilities(float deltaTime)
+    {
+        if (deltaTime <= 0f) return;
+
+        foreach (NovaAbility ability in abilities)
+        {
+            if (!ability) return;
+
+            ability.TickCooldown(deltaTime);
         }
     }
 

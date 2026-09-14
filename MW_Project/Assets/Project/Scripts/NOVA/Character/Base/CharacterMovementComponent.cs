@@ -13,10 +13,6 @@ public class CharacterMovementComponent : NovaComponent
     [Tooltip("캐릭터 회전 속도")] 
     [SerializeField] private float rotationSpeed = 10f; 
 
-    [Header("Sprint Settings")]
-    [Tooltip("달리기 시작 시 즉시 소모되는 스테미나")]
-    [SerializeField] private float sprintStartStaminaCost = 10f;
-
     [Header("Jump Settings")]
     [Tooltip("플레이어 점프 파워")]
     [SerializeField] private float jumpPower = 7f;
@@ -36,6 +32,7 @@ public class CharacterMovementComponent : NovaComponent
     private Rigidbody rb = null;
     private CapsuleCollider capsuleCollider = null;
     private AttributeComponent attributes = null;
+    private AbilitySystemComponent abilitySystem;
 
     private Transform mainCameraTransform = null;
     private Vector2 moveInput = Vector2.zero;
@@ -45,10 +42,19 @@ public class CharacterMovementComponent : NovaComponent
     private bool isSprinting = false;
     private bool isGrounded = false;
     private bool canMove = true;
+    private bool isDodging = false;
+    private bool dodgeDirectionReady = false;
+
+    private Vector3 dodgeDirection = Vector3.zero;
+
+    private float dodgeTimer = 0f;
+    private float dodgeInputBufferTimer = 0f;
+    private float dodgeSpeed = 0f;
 
     public bool CanMove => canMove;
     public bool IsGrounded => isGrounded;
     public bool IsSprinting => isSprinting;
+    public bool IsDodging => isDodging;
 
     protected override void Awake()
     {
@@ -58,11 +64,13 @@ public class CharacterMovementComponent : NovaComponent
         capsuleCollider = GetComponent<CapsuleCollider>();
 
         attributes = GetComponent<AttributeComponent>();
+        abilitySystem = GetComponent<AbilitySystemComponent>();
 
         if (!rb) Debug.LogError("Rigidbody를 찾을 수 없습니다.", this);
         if (!capsuleCollider) Debug.LogError("CapsuleCollider를 찾을 수 없습니다.", this);
 
         if (!attributes) Debug.LogError("AttributeComponent를 찾을 수 없습니다.", this);
+        if (!abilitySystem) Debug.LogError("AbilitySystemComponent를 찾을 수 없습니다.", this);
     }
 
     private void Start()
@@ -85,16 +93,28 @@ public class CharacterMovementComponent : NovaComponent
     private void FixedUpdate()
     {
         if (!canMove) return;
+        
+        if (isDodging)
+        {
+            HandleDodge();
+            return;
+        }
 
         HandleMovement();
     }
 
     private void CheckGrounded()
     {
-        Vector3 rayOrigin = transform.position + Vector3.up * 0.1f;
-        float rayDistance = 0.25f;
+        if (!capsuleCollider)
+        {
+            isGrounded = false;
+            return;
+        }
 
-        isGrounded = Physics.Raycast(rayOrigin, Vector3.down, rayDistance, groundMask);
+        Vector3 origin = capsuleCollider.bounds.center;
+        float rayDistance = capsuleCollider.bounds.extents.y + 0.1f;
+
+        isGrounded = Physics.Raycast(origin, Vector3.down, rayDistance, groundMask);
     }
 
     private void HandleMovement()
@@ -174,6 +194,103 @@ public class CharacterMovementComponent : NovaComponent
         }
         
         attributes.RecoverStamina(Time.deltaTime);
+    }
+
+    public void StartDodge(float distance, float duration, float inputBufferTime)
+    {
+        if (isDodging) return;
+        if (!canMove) return;
+
+        if (distance <= 0f) return;
+        if (duration <= 0f) return;
+
+        isDodging = true;
+
+        dodgeTimer = duration;
+        dodgeSpeed = distance / duration;
+
+        Vector3 moveDirection = GetMoveDirection();
+
+        if (moveDirection != Vector3.zero)
+        {
+            dodgeDirection = moveDirection;
+            dodgeDirectionReady = true;
+            dodgeInputBufferTimer = 0f;
+        }
+        else
+        {
+            dodgeDirection = transform.forward;
+            dodgeDirectionReady = false;
+            dodgeInputBufferTimer = inputBufferTime;
+        }
+
+        isSprinting = false;
+        jumpInput = false;
+    }
+
+    private void HandleDodge()
+    {
+        if (!dodgeDirectionReady)
+        {
+            dodgeInputBufferTimer -= Time.fixedDeltaTime;
+
+            Vector3 moveDirection = GetMoveDirection();
+
+            if (moveDirection != Vector3.zero)
+            {
+                dodgeDirection = moveDirection;
+                dodgeDirectionReady = true;
+            }
+            else if (dodgeInputBufferTimer <= 0f)
+            {
+                dodgeDirection = transform.forward;
+                dodgeDirectionReady = true;
+            }
+        }
+
+        if (!dodgeDirectionReady) return;
+
+        dodgeTimer -= Time.fixedDeltaTime;
+
+        Vector3 velocity = dodgeDirection * dodgeSpeed;
+
+        velocity.y = GetLinearVelocityVector().y;
+        SetLinearVelocity(velocity);
+
+        if (dodgeDirection != Vector3.zero)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(dodgeDirection);
+
+            transform.rotation = Quaternion.Slerp(transform.rotation,targetRotation,rotationSpeed * Time.fixedDeltaTime);
+        }
+
+        if (dodgeTimer <= 0f)
+        {
+            EndDodge();
+        }
+    }
+
+    private void EndDodge()
+    {
+        isDodging = false;
+
+        dodgeDirection = Vector3.zero;
+        dodgeDirectionReady = false;
+
+        dodgeTimer = 0f;
+        dodgeInputBufferTimer = 0f;
+        dodgeSpeed = 0f;
+
+        Vector3 velocity = GetLinearVelocityVector();
+        velocity.x = 0f;
+        velocity.z = 0f;
+
+        SetLinearVelocity(velocity);
+
+        if (sprintHeld)
+        {
+            isSprinting = true;
+        }
     }
     
     private void HandleAnimation()
@@ -279,11 +396,12 @@ public class CharacterMovementComponent : NovaComponent
 
         if (context.started)
         {
-            if (attributes.CurrentStamina <= 0f)return;
-            if (!attributes.TryConsumeStamina(sprintStartStaminaCost)) return;
-
             sprintHeld = true;
-            isSprinting = true;
+
+            if (abilitySystem != null)
+            {
+                abilitySystem.TryActivateAbility(new GameplayTag("Ability.Dodge"));
+            }
         }
         else if (context.canceled)
         {

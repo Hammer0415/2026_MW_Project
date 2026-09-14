@@ -2,38 +2,68 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
-    [Header("Target")]
-    [Tooltip("카메라 시점 타겟")]
-    [SerializeField] private Transform target;
-
     [Header("Follow Settings")]
-    [Tooltip("카메라 오프셋")]
-    [SerializeField] private Vector3 offset = new Vector3(0f, 2f, -5f);
-    [Tooltip("타겟을 따라가는 속도")]
-    [SerializeField] private float followSpeed = 10f;
+    [Tooltip("Camera Arm")]
+    [SerializeField] private Transform cameraArm = null;
 
-    [Header("Look Settings")]
-    [Tooltip("타겟을 바라보는 높이")]
-    [SerializeField] private float lookHeight = 1.5f;
-    [Tooltip("바라보는 속도")]
-    [SerializeField] private float lookSpeed = 10f;
+    [Header("Target")]
+    [Tooltip("플레이어의 TargetingComponent")]
+    [SerializeField] private TargetingComponent targetingComponent = null;
+    [Tooltip("타겟을 바라보는 속도")]
+    [SerializeField] private float lookAtSpeed = 10f;
+
+    private void Awake()
+    {
+        if (!cameraArm) cameraArm = transform.root;
+
+        CursorController.Instance.CursorOnOff();
+    }
 
     private void LateUpdate()
     {
-        if (target == null) return;
+        if (CursorController.Instance.IsLocked()) return;
 
-        FollowTarget();
+        HandleLook();
     }
 
-    private void FollowTarget()
+    private void HandleLook()
     {
-        Vector3 targetPosition = target.position + offset;
+        if (cameraArm == null) return;
 
-        transform.position = Vector3.Lerp(transform.position, targetPosition, followSpeed * Time.deltaTime);
+        if (targetingComponent && targetingComponent.IsTargeting)
+        {
+            HandleLookAtTarget();
+        }
+        else
+        {
+            HandleLookAtArm();
+        }
     }
 
-    public void SetTarget(Transform newTarget)
+    private void HandleLookAtTarget()
     {
-        target = newTarget;
+        NovaCharacter target = targetingComponent.CurrentTarget;
+
+        float lockOnFocusRatio = targetingComponent.LockOnFocusRatio;
+
+        if (!target) return;
+
+        Vector3 playerPivot = cameraArm.position;
+        Vector3 targetPosition = target.transform.position + Vector3.up * targetingComponent.TargetHeight;
+        Vector3 lockOnFocusPoint = Vector3.Lerp(playerPivot, targetPosition, lockOnFocusRatio);
+
+        Vector3 direction = lockOnFocusPoint - transform.position;
+
+        if (direction.sqrMagnitude <= 0.001f) return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(direction);
+        targetRotation = Quaternion.Euler(targetRotation.eulerAngles.x, targetRotation.eulerAngles.y, 0f);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, lookAtSpeed * Time.deltaTime);
+    }
+
+    private void HandleLookAtArm()
+    {
+        Quaternion targetRotation = Quaternion.Euler(cameraArm.eulerAngles.x, cameraArm.eulerAngles.y, 0f);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, lookAtSpeed * Time.deltaTime);
     }
 }
