@@ -62,9 +62,9 @@ float4 frag(Varyings input) : SV_TARGET
     
     float viewDot = dot(characterForward, viewDir);
 
-    if (_StencilRef == 1.0)
+    if (_UseViewClip > 0.5)
     {
-        clip(viewDot - _ViewThreshold); 
+        clip(viewDot - _ViewThreshold);
     }
 
     // Diffuse

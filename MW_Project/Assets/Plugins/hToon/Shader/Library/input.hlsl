@@ -35,6 +35,9 @@ CBUFFER_START(UnityPerMaterial)
 // Stencil
 float _StencilRef;
 float _ViewThreshold;
+float _ZTest;
+float _ZWrite;
+float _UseViewClip;
 
 // Diffuse
 float4 _DiffuseTex_ST;

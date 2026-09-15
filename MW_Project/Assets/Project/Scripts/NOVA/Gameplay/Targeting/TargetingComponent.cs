@@ -38,6 +38,8 @@ public class TargetingComponent : NovaComponent
 
     private Camera mainCamera = null;
 
+    private float targetLostTimer = 0f;
+
     protected override void Awake()
     {
         base.Awake();
@@ -110,13 +112,31 @@ public class TargetingComponent : NovaComponent
     // 현재 타겟이 플레이어 시아 안에 들어와 있는지 확인
     private void CheckTargetVisibility()
     {
-        if (!IsTargeting) return;
-        if (!currentTarget) return;
-
-        if (!IsTargetOnScreen(currentTarget))
+        if (!IsTargeting)
         {
-            SwitchTarget();
+            targetLostTimer = 0f;
+            return;
         }
+
+        if (!currentTarget)
+        {
+            targetLostTimer = 0f;
+            return;
+        }
+
+        if (IsTargetOnScreen(currentTarget))
+        {
+            targetLostTimer = 0f;
+            return;
+        }
+
+        targetLostTimer += Time.deltaTime;
+
+        if (targetLostTimer < targetSwitchDelay) return;
+
+        targetLostTimer = 0f;
+
+        SwitchTarget();
     }
 
     public void SetTarget(NovaCharacter target)
@@ -184,33 +204,30 @@ public class TargetingComponent : NovaComponent
     {
         if (!mainCamera) return false;
 
-        Vector3 viewportPosition = mainCamera.WorldToViewportPoint(target.transform.position);
+        Vector3 targetPosition = target.transform.position + Vector3.up * targetHeight;
+        Vector3 viewportPosition = mainCamera.WorldToViewportPoint(targetPosition);
 
         if (viewportPosition.z <= 0f) return false;
 
         float min = lockOnScreenMargin;
         float max = 1f - lockOnScreenMargin;
 
-        return viewportPosition.x >= min &&
-            viewportPosition.x <= max &&
-            viewportPosition.y >= min &&
-            viewportPosition.y <= max;
+        return viewportPosition.x >= min && viewportPosition.x <= max && viewportPosition.y >= min && viewportPosition.y <= max;
     }
 
     private void CheckTargetLineOfSight()
     {
         if (!IsTargeting) return;
         if (!currentTarget) return;
+        if (!mainCamera) return;
 
         Vector3 origin = mainCamera.transform.position;
-        Vector3 targetPosition = currentTarget.transform.position;
+        Vector3 targetPosition = currentTarget.transform.position + Vector3.up * targetHeight;
 
         Vector3 direction = targetPosition - origin;
         float distance = direction.magnitude;
 
-        direction.y += targetHeight;
-
-        if (Physics.Raycast(origin, direction.normalized, distance, obstructionLayer))
+        if (Physics.Raycast(origin, direction.normalized, distance, obstructionLayer, QueryTriggerInteraction.Ignore))
         {
             ClearTarget();
         }

@@ -134,7 +134,11 @@ public class CharacterMovementComponent : NovaComponent
 
         HandleRotation(moveDirection);
 
-        float movementSpeed = isSprinting ? sprintSpeed : moveSpeed;
+        float inputMagnitude = Mathf.Clamp01(moveInput.magnitude);
+        float movementSpeed;
+
+        if (isSprinting) movementSpeed = sprintSpeed;
+        else movementSpeed = moveSpeed * inputMagnitude;
 
         Vector3 targetVelocity = moveDirection * movementSpeed;
         targetVelocity.y = GetLinearVelocityVector().y;
@@ -297,14 +301,18 @@ public class CharacterMovementComponent : NovaComponent
     {
         if (animator == null) return;
 
-        bool isMoving = moveInput != Vector2.zero;
-        bool isWalk = isMoving && !isSprinting;
-        bool isRun = isMoving && isSprinting;
-        bool isJump = !isGrounded;
+        float move = moveInput.magnitude;
 
-        animator.SetBool("isWalk", isWalk);
-        animator.SetBool("isRun", isRun);
-        animator.SetBool("isJump", isJump);
+        if (move <= 0f)
+        {
+            animator.SetFloat("Move", 0f, 0.1f, Time.deltaTime);
+            return;
+        }
+
+        if (isSprinting) move = 1f;
+        else move = Mathf.Lerp(0.5f, 0.75f, move);
+
+        animator.SetFloat("Move", move, 0.1f, Time.deltaTime);
     }
     
     private Vector3 GetMoveDirection()

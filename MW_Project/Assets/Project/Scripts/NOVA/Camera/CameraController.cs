@@ -15,14 +15,15 @@ public class CameraController : MonoBehaviour
     private void Awake()
     {
         if (!cameraArm) cameraArm = transform.root;
+    }
 
+    private void Start()
+    {
         CursorController.Instance.CursorOnOff();
     }
 
     private void LateUpdate()
     {
-        if (CursorController.Instance.IsLocked()) return;
-
         HandleLook();
     }
 

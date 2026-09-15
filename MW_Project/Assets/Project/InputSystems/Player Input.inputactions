@@ -256,6 +256,17 @@
                 },
                 {
                     "name": "",
+                    "id": "db5c3c88-e4c1-4498-874c-da1b6953a4eb",
+                    "path": "<Keyboard>/p",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Targeting",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "03d859de-e45e-4ce8-93da-9ededace611c",
                     "path": "<Keyboard>/e",
                     "interactions": "",

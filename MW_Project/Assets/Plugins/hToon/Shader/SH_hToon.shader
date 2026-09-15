@@ -3,11 +3,24 @@ Shader "hToon/SH_hToon"
     Properties
     {
         [Header(Stencil)]
-        [Enum(UnityEngine.Rendering.CullMode)]_CullMode("Cull Mode", Float) = 0.0
-        _StencilRef ("Stencil Reference (EyeBrow: 1)", Float) = 0
-        _ViewThreshold ("Stencil View Threshold", Float) = 0
-        [Enum(UnityEngine.Rendering.CompareFunction)] _StencilComp ("Stencil Comparison", Float) = 8
-        [Enum(UnityEngine.Rendering.StencilOp)] _StencilPassOp ("Stencil Pass Operation", Float) = 0
+        [Enum(UnityEngine.Rendering.CullMode)] _CullMode("Cull Mode", Float) = 0.0
+        _StencilRef ("Stencil Reference", Float) = 0
+        _ViewThreshold ("View Threshold", Range(-1,1)) = -0.4
+
+        [Enum(UnityEngine.Rendering.CompareFunction)]
+        _StencilComp ("Stencil Comparison", Float) = 8
+
+        [Enum(UnityEngine.Rendering.StencilOp)]
+        _StencilPassOp ("Stencil Pass Operation", Float) = 0
+
+        [Enum(UnityEngine.Rendering.CompareFunction)]
+        _ZTest ("Depth Test", Float) = 4
+
+        [Toggle]
+        _ZWrite ("Depth Write", Float) = 1
+
+        [Toggle]
+        _UseViewClip ("Use View Clip", Float) = 0
 
         [Space(20)]
         [Header(Diffuse)]
@@ -58,6 +71,9 @@ Shader "hToon/SH_hToon"
 
             Cull [_CullMode]
 
+            ZTest [_ZTest]
+            ZWrite [_ZWrite]
+
             Stencil
             {
                 Ref [_StencilRef]
@@ -90,6 +106,7 @@ Shader "hToon/SH_hToon"
 
             Blend SrcAlpha OneMinusSrcAlpha 
             ZWrite Off
+            ZTest [_ZTest]
             Cull [_CullMode]
 
             Stencil
