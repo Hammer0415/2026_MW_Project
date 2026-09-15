@@ -35,6 +35,7 @@ public class CameraArmController : MonoBehaviour
     private Vector3 velocity = Vector3.zero;
 
     private Vector2 lookInput;
+    private bool isMouseInput;
 
     private float yaw;
     private float pitch;
@@ -65,8 +66,8 @@ public class CameraArmController : MonoBehaviour
 
     private void HandleLookInput()
     {
-        yaw += lookInput.x * mouseSensitivity;
-        pitch -= lookInput.y * mouseSensitivity;
+        yaw += (isMouseInput) ? lookInput.x * mouseSensitivity : lookInput.x * (mouseSensitivity * 5f);
+        pitch -= (isMouseInput) ? lookInput.y * mouseSensitivity : lookInput.y * (mouseSensitivity * 5f);
 
         pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
     }
@@ -90,6 +91,9 @@ public class CameraArmController : MonoBehaviour
     public void OnLook(InputAction.CallbackContext context)
     {
         lookInput = context.ReadValue<Vector2>();
+
+        if (context.control.device is Mouse) isMouseInput = true;
+        else isMouseInput = false;
     }
     
     public void SetLookTarget(Transform target)

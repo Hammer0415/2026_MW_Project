@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M_Wave01
+  m_Name: M_HitWave01
   m_Shader: {fileID: -6465566751694194690, guid: 0d6d5ed1bc6434198a0c4d92f975a6ba, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0

@@ -19,3 +19,6 @@ MonoBehaviour:
   dodgeDistance: 5
   dodgeDuration: 0.25
   dodgeInputBufferTime: 0.1
+  dodgeEffectPrefab: {fileID: 6407064939990870663, guid: 49a3ddb9838d39341ac661e865be46ae, type: 3}
+  dodgeEffectPointKey: Dodge
+  dodgeEffectLifetime: 0.5

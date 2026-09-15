@@ -16,4 +16,5 @@ MonoBehaviour:
     tag: Combat.BasicAttack
   cooldown: 0.3
   damage: 10
-  attackRange: 15
+  muzzleEffectPrefab: {fileID: 3344128880370025543, guid: 1244a49478989e346a48c0f491d14764, type: 3}
+  muzzleEffectLifetime: 0.5

@@ -27,6 +27,16 @@
                     "priority": 0
                 },
                 {
+                    "name": "ZoomInOut",
+                    "type": "Value",
+                    "id": "cd409006-3e60-40ee-9478-45eac06f9de8",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true,
+                    "priority": 0
+                },
+                {
                     "name": "Jump",
                     "type": "Button",
                     "id": "8a8c8a54-e8a2-44b9-957b-9f06572c8df7",
@@ -183,7 +193,7 @@
                     "path": "<Gamepad>/buttonSouth",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": ";PC",
                     "action": "Jump",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -205,7 +215,7 @@
                     "path": "<Gamepad>/leftShoulder",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": ";PC",
                     "action": "Sprint",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -227,7 +237,7 @@
                     "path": "<Gamepad>/buttonWest",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": ";PC",
                     "action": "Attack",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -238,7 +248,7 @@
                     "path": "<Mouse>/middleButton",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": ";PC",
                     "action": "Targeting",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -249,7 +259,7 @@
                     "path": "<Gamepad>/rightStickPress",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": ";PC",
                     "action": "Targeting",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -260,7 +270,7 @@
                     "path": "<Keyboard>/p",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": ";PC",
                     "action": "Targeting",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -271,7 +281,7 @@
                     "path": "<Keyboard>/e",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": ";PC",
                     "action": "E Skill",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -282,10 +292,54 @@
                     "path": "<Gamepad>/buttonNorth",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": ";PC",
                     "action": "E Skill",
                     "isComposite": false,
                     "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "88ef1358-f5c5-419a-b3cb-4b1ad1121d8a",
+                    "path": "<Mouse>/scroll/y",
+                    "interactions": "",
+                    "processors": "Scale(factor=-1)",
+                    "groups": ";PC",
+                    "action": "ZoomInOut",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "1D Axis",
+                    "id": "893fdab8-7356-4d02-a4aa-d94ab9687611",
+                    "path": "1DAxis",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ZoomInOut",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "negative",
+                    "id": "e635907b-972c-464f-ad68-2bdb738fa360",
+                    "path": "<Gamepad>/leftTrigger",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";PC",
+                    "action": "ZoomInOut",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "positive",
+                    "id": "58806654-ec99-4876-9ae8-4ac73e86062a",
+                    "path": "<Gamepad>/rightTrigger",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";PC",
+                    "action": "ZoomInOut",
+                    "isComposite": false,
+                    "isPartOfComposite": true
                 }
             ]
         }

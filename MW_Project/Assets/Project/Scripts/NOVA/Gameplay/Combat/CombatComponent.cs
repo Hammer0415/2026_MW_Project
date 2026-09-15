@@ -8,6 +8,9 @@ public class CombatComponent : NovaComponent
     [Tooltip("오른쪽 권총 총구")]
     [SerializeField] private Transform rightMuzzle;
 
+    private Transform currentMuzzle;
+    public Transform CurrentMuzzle => currentMuzzle;
+
     [Header("Targeting")]
     [Tooltip("플레이어의 TargetingComponent")]
     [SerializeField] private TargetingComponent targetingComponent;
@@ -29,6 +32,7 @@ public class CombatComponent : NovaComponent
     private bool useLeftMuzzle = true;
 
     private NovaCharacter attackFaceTarget;
+
     private float pendingAttackDamage;
     private bool pendingAttack;
 
@@ -95,6 +99,7 @@ public class CombatComponent : NovaComponent
         }
 
         useLeftMuzzle = !useLeftMuzzle;
+        currentMuzzle = muzzle;
 
         return muzzle;
     }
@@ -237,7 +242,6 @@ public class CombatComponent : NovaComponent
 
         return closestTarget;
     }
-
 
     private bool IsTargetInAttackFaceRange(NovaCharacter target)
     {

@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody))]
@@ -28,6 +29,13 @@ public class CharacterMovementComponent : NovaComponent
     [Header("Animation Settings")]
     [Tooltip("애니메이터 컴포넌트")]
     [SerializeField] private Animator animator = null;
+
+    [Header("Dodge Settings")]
+    [Tooltip("대쉬 중 플레이어 메쉬 숨김")]
+    [SerializeField] private Renderer[] characterRenderers;
+    [Tooltip("대쉬 중 메쉬를 숨기는 시간 비율")]
+    [Range(0f, 1f)]
+    [SerializeField] private float dodgeHideRatio = 0.7f;
 
     private Rigidbody rb = null;
     private CapsuleCollider capsuleCollider = null;
@@ -230,6 +238,8 @@ public class CharacterMovementComponent : NovaComponent
 
         isSprinting = false;
         jumpInput = false;
+
+        StartCoroutine(DodgeRoutine(distance, duration, inputBufferTime));
     }
 
     private void HandleDodge()
@@ -368,6 +378,50 @@ public class CharacterMovementComponent : NovaComponent
             isSprinting = false;
             sprintHeld = false;
         }
+    }
+
+    private void HideCharacterMesh()
+    {
+        if (characterRenderers == null) return;
+
+        foreach (Renderer renderer in characterRenderers)
+        {
+            if (renderer) renderer.enabled = false;
+        }
+    }
+
+    private void ShowCharacterMesh()
+    {
+        if (characterRenderers == null) return;
+
+        foreach (Renderer renderer in characterRenderers)
+        {
+            if (renderer) renderer.enabled = true;
+        }
+    }
+
+    private IEnumerator DodgeRoutine(float distance, float duration, float inputBufferTime)
+    {
+        float elapsed = 0f;
+
+        HideCharacterMesh();
+
+        bool meshShown = false;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+
+            if (!meshShown && elapsed >= duration * dodgeHideRatio)
+            {
+                ShowCharacterMesh();
+                meshShown = true;
+            }
+
+            yield return null;
+        }
+
+        if (!meshShown) ShowCharacterMesh();
     }
     
     public void OnMove(InputAction.CallbackContext context)

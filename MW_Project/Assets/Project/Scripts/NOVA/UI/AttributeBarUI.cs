@@ -109,4 +109,33 @@ public class AttributeBarUI : MonoBehaviour
         currentBar.maxValue = max;
         currentBar.value = current;
     }
+
+    public void SetAttribute(AttributeComponent newAttribute)
+    {
+        if (attribute != null)
+        {
+            if (isHealth) attribute.OnHealthChanged -= HandleHealthChanged;
+            else attribute.OnStaminaChanged -= HandleStaminaChanged;
+        }
+
+        attribute = newAttribute;
+
+        if (attribute == null)
+        {
+            if (currentBar) currentBar.value = 0f;
+            if (delayedBar) delayedBar.value = 0f;
+
+            return;
+        }
+
+        if (isHealth) attribute.OnHealthChanged += HandleHealthChanged;
+        else attribute.OnStaminaChanged += HandleStaminaChanged;
+
+        UpdateInitialValue();
+    }
+
+    public void ClearAttribute()
+    {
+        SetAttribute(null);
+    }
 }
