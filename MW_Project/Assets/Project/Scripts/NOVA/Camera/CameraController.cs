@@ -34,6 +34,9 @@ public class CameraController : MonoBehaviour
     private float targetFOV;
     private float zoomInput;
     private bool zoomIsMouse;
+    private Transform focusOverride;
+    private float focusOverrideHeight = 1.2f;
+    private float focusOverrideRatio = 1f;
 
     private void Awake()
     {
@@ -66,6 +69,12 @@ public class CameraController : MonoBehaviour
     {
         if (cameraArm == null) return;
 
+        if (focusOverride)
+        {
+            HandleLookAtFocusOverride();
+            return;
+        }
+
         if (targetingComponent && targetingComponent.IsTargeting)
         {
             HandleLookAtTarget();
@@ -74,6 +83,39 @@ public class CameraController : MonoBehaviour
         {
             HandleLookAtArm();
         }
+    }
+
+    // 퍼펙트 회피 등으로 지정된 대상을 바로 바라본다.
+    private void HandleLookAtFocusOverride()
+    {
+        Vector3 fromPosition = cameraArm ? cameraArm.position : transform.position;
+        Vector3 targetPosition = focusOverride.position + Vector3.up * focusOverrideHeight;
+        Vector3 focusPoint = Vector3.Lerp(fromPosition, targetPosition, focusOverrideRatio);
+        Vector3 direction = focusPoint - transform.position;
+
+        if (direction.sqrMagnitude <= 0.001f) return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(direction);
+        targetRotation = Quaternion.Euler(targetRotation.eulerAngles.x, targetRotation.eulerAngles.y, 0f);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, lookAtSpeed * Time.unscaledDeltaTime);
+
+        Vector3 currentEuler = transform.eulerAngles;
+        currentEuler.z = 0f;
+        transform.rotation = Quaternion.Euler(currentEuler);
+    }
+
+    // 퍼펙트 회피처럼 잠시 특정 대상을 바라보게 한다. ratio가 0이면 플레이어, 1이면 대상이다.
+    public void SetFocusOverride(Transform target, float height = 1.2f, float ratio = 1f)
+    {
+        focusOverride = target;
+        focusOverrideHeight = height;
+        focusOverrideRatio = Mathf.Clamp01(ratio);
+    }
+
+    // 강제 포커스를 해제하고 원래 카메라 바라보기로 되돌린다.
+    public void ClearFocusOverride()
+    {
+        focusOverride = null;
     }
 
     // 줌 입력으로 목표 FOV를 바꾸고 부드럽게 보간한다.

@@ -43,6 +43,7 @@ public class AbilitySystemComponent : NovaComponent
     private CharacterMovementComponent movement;
     private CharacterAnimationComponent animationComponent;
     private CombatComponent combat;
+    private PerfectDodgeComponent perfectDodge;
     private Animator animator;
     private NovaAbility activeAbility;
     private int queuedComboCount;
@@ -66,6 +67,7 @@ public class AbilitySystemComponent : NovaComponent
         movement = GetComponent<CharacterMovementComponent>();
         animationComponent = GetComponent<CharacterAnimationComponent>();
         combat = GetComponent<CombatComponent>();
+        perfectDodge = GetComponent<PerfectDodgeComponent>();
         animator = GetComponent<Animator>();
 
         if (!animator && animationComponent) animator = animationComponent.Animator;
@@ -84,11 +86,21 @@ public class AbilitySystemComponent : NovaComponent
     {
         if (!context.started) return;
 
+        if (perfectDodge && perfectDodge.TryQueueStrongAttack()) return;
+
         if (isComboActive)
         {
             TryQueueNextCombo();
             return;
         }
+
+        StartCombo();
+    }
+
+    // 퍼펙트 회피로 받아 둔 기본 공격을 시작한다.
+    public void StartBufferedBasicAttack()
+    {
+        if (isComboActive) return;
 
         StartCombo();
     }
@@ -222,12 +234,16 @@ public class AbilitySystemComponent : NovaComponent
     // Animation Event: 다음 콤보 공격 구간으로 넘긴다.
     public void AdvanceCombo()
     {
+        if (!isComboActive) return;
+
         if (combat) combat.AdvanceCombo();
     }
 
     // Animation Event: 지정한 총구/공격 인덱스로 기본 공격을 발동한다.
     public void TryActivateBasicAttack(int index)
     {
+        if (!isComboActive) return;
+
         if (combat) combat.SetMuzzleIndex(index);
 
         TryActivateAbility(basicAttackTag, true);
@@ -282,6 +298,45 @@ public class AbilitySystemComponent : NovaComponent
         {
             animationComponent.SetRootMotion(false);
         }
+    }
+
+    // 회피로 공격을 끊는다. 이동 잠금도 함께 풀고, 남은 공격 애니메이션/이벤트는 무시한다.
+    public void InterruptForDodge()
+    {
+        bool stopComboAnimation = isComboActive || IsPlayingComboAnimation();
+
+        ResetComboState();
+
+        if (movement)
+        {
+            movement.SetRootMotionEnabled(false);
+            movement.SetMovementEnabled(true);
+        }
+
+        if (animationComponent)
+        {
+            animationComponent.SetRootMotion(false);
+        }
+
+        if (animator)
+        {
+            animator.applyRootMotion = false;
+            animator.ResetTrigger(basicAttackTrigger);
+            animator.ResetTrigger("isJump");
+
+            if (stopComboAnimation)
+            {
+                animator.Play("Move", 0, 0f);
+            }
+        }
+
+        if (activeAbility)
+        {
+            activeAbility.EndAbility(Owner);
+            activeAbility = null;
+        }
+
+        if (combat) combat.StopAttackFacing();
     }
 
     // Combo01을 시작하고 이동을 잠근 뒤 적을 바라보게 한다.

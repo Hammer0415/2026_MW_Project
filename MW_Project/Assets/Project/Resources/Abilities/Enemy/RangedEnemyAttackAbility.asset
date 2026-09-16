@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 10835e0088be85348a10dd7cb0a72da8, type: 3}
-  m_Name: BasicAttackAbility
+  m_Name: RangedEnemyAttackAbility
   m_EditorClassIdentifier: Assembly-CSharp::BasicAttackAbility
   abilityTag:
     tag: Combat.BasicAttack
-  category: 2
+  category: 5
   cooldown: 0.3
   canActivateInAir: 0
   canActivateWhileDodging: 0
@@ -22,7 +22,7 @@ MonoBehaviour:
   animationTrigger: 
   useRootMotion: 0
   damage: 10
-  muzzleEffectPrefab: {fileID: 3344128880370025543, guid: 1244a49478989e346a48c0f491d14764, type: 3}
+  muzzleEffectPrefab: {fileID: 3344128880370025543, guid: 0935fb6a374e7be478506c2fb835fb7e, type: 3}
   muzzleEffectLifetime: 0.5
   hitEffectPrefab: {fileID: 0}
   hitEffectLifetime: 0.5

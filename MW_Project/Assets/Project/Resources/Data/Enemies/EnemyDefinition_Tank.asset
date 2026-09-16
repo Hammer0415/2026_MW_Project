@@ -16,7 +16,7 @@ MonoBehaviour:
   enemyType: 2
   maxHealth: 280
   attackDamage: 30
-  defense: 14
+  defense: 4
   poise: 8
   detectionRange: 12
   attackRange: 2.4
@@ -26,10 +26,10 @@ MonoBehaviour:
   attackDelay: 2.7
   meleeHitRadius: 2.1
   rangedAttackRange: 12
-  dashTriggerRange: 0
-  dashSpeed: 16
+  dashTriggerRange: 5.8
+  dashSpeed: 17
   dashDuration: 0.28
-  dashCooldown: 2.2
+  dashCooldown: 2
   abilities: []
   attackAbility: {fileID: 0}
   phaseCount: 1

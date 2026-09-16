@@ -53,7 +53,7 @@ public class DodgeAbility : NovaAbility
 
         AbilitySystemComponent abilitySystem = owner.AbilitySystem ? owner.AbilitySystem : owner.GetComponent<AbilitySystemComponent>();
 
-        if (abilitySystem) abilitySystem.EndActiveAbility();
+        if (abilitySystem) abilitySystem.InterruptForDodge();
 
         SpawnDodgeEffect(owner);
 

@@ -53,6 +53,7 @@ public class CombatComponent : NovaComponent
     private CombatFeedbackComponent feedback;
     private EffectComponent effectComponent;
     private AbilitySystemComponent abilitySystem;
+    private PerfectDodgeComponent perfectDodge;
 
     private float pendingAttackDamage;
     private bool pendingAttack;
@@ -88,6 +89,7 @@ public class CombatComponent : NovaComponent
         feedback = GetComponent<CombatFeedbackComponent>();
         effectComponent = GetComponent<EffectComponent>();
         abilitySystem = GetComponent<AbilitySystemComponent>();
+        perfectDodge = GetComponent<PerfectDodgeComponent>();
     }
 
     private void Update()
@@ -237,6 +239,13 @@ public class CombatComponent : NovaComponent
             return;
         }
 
+        bool strongAttack = perfectDodge && perfectDodge.IsStrongAttackReady;
+
+        if (strongAttack)
+        {
+            damageInfo.Amount *= perfectDodge.StrongAttackDamageMultiplier;
+        }
+
         IDamageable damageable = target.GetComponent<IDamageable>();
 
         if (damageable == null) return;
@@ -245,6 +254,11 @@ public class CombatComponent : NovaComponent
 
         GameplayEventBus.Raise(new GameplayEvent(new GameplayTag("Combat.Hit"), Owner, target, damageInfo.Amount));
         PlayHitFeedback(damageInfo);
+
+        if (strongAttack)
+        {
+            perfectDodge.TryApplyStrongAttack(target);
+        }
     }
 
     // 현재 사용할 총구를 선택한다.
@@ -317,13 +331,25 @@ public class CombatComponent : NovaComponent
     // 조준 중이면 타겟을, 아니면 총구 전방을 발사 방향으로 사용한다.
     private Vector3 GetFireDirection(Transform muzzle)
     {
-        if (targetingComponent && targetingComponent.IsTargeting)
+        NovaCharacter priorityTarget = null;
+
+        if (perfectDodge && perfectDodge.IsStrongAttackReady)
         {
-            NovaCharacter target = targetingComponent.CurrentTarget;
+            priorityTarget = perfectDodge.FocusTarget;
+        }
+        else if (targetingComponent && targetingComponent.IsTargeting)
+        {
+            priorityTarget = targetingComponent.CurrentTarget;
+        }
+
+        if (priorityTarget)
+        {
+            NovaCharacter target = priorityTarget;
 
             if (target)
             {
-                Vector3 targetPosition = target.transform.position + Vector3.up * targetingComponent.TargetHeight;
+                float targetHeight = targetingComponent ? targetingComponent.TargetHeight : 1.2f;
+                Vector3 targetPosition = target.transform.position + Vector3.up * targetHeight;
                 Vector3 direction = targetPosition - muzzle.position;
 
                 if (direction.sqrMagnitude > 0.001f)
@@ -397,6 +423,11 @@ public class CombatComponent : NovaComponent
     // 락온 대상 또는 가장 가까운 적을 공격 대상으로 고른다.
     private NovaCharacter GetAttackTarget()
     {
+        if (perfectDodge && perfectDodge.IsStrongAttackReady && perfectDodge.FocusTarget && !perfectDodge.FocusTarget.IsDead)
+        {
+            return perfectDodge.FocusTarget;
+        }
+
         if (targetingComponent && targetingComponent.IsTargeting)
         {
             NovaCharacter currentTarget = targetingComponent.CurrentTarget;

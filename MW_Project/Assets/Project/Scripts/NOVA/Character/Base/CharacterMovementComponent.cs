@@ -80,6 +80,7 @@ public class CharacterMovementComponent : NovaComponent
     private float dodgeSpeed;
     private float perfectDodgeTimer;
     private float jumpGroundCheckIgnoreTimer;
+    private Coroutine dodgeRoutine;
 
     public bool CanMove => canMove;
     public bool IsGrounded => isGrounded;
@@ -319,9 +320,12 @@ public class CharacterMovementComponent : NovaComponent
         if (distance <= 0f) return;
         if (duration <= 0f) return;
 
+        SetRootMotionEnabled(false);
+
         isDodging = true;
         dodgeTimer = duration;
         dodgeSpeed = distance / duration;
+        dodgeInputBufferTimer = Mathf.Max(inputBufferTime, 0f);
 
         Vector3 moveDirection = GetMoveDirection();
 
@@ -329,13 +333,11 @@ public class CharacterMovementComponent : NovaComponent
         {
             dodgeDirection = moveDirection;
             dodgeDirectionReady = true;
-            dodgeInputBufferTimer = 0f;
         }
         else
         {
             dodgeDirection = transform.forward;
             dodgeDirectionReady = false;
-            dodgeInputBufferTimer = inputBufferTime;
         }
 
         isSprinting = false;
@@ -346,49 +348,108 @@ public class CharacterMovementComponent : NovaComponent
 
         if (attributes) attributes.SetInvincible(invincibleDuration);
 
-        StartCoroutine(DodgeRoutine(duration));
+        ApplyDodgeVelocity();
+
+        if (dodgeRoutine != null)
+        {
+            StopCoroutine(dodgeRoutine);
+        }
+
+        dodgeRoutine = StartCoroutine(DodgeRoutine(duration));
     }
 
-    // 회피 방향으로 빠르게 이동하고 시간이 끝나면 회피를 종료한다.
+    // 퍼펙트 회피 강공격처럼 회피를 중간에 끊고 메쉬를 다시 보여준다.
+    public void CancelDodge()
+    {
+        if (dodgeRoutine != null)
+        {
+            StopCoroutine(dodgeRoutine);
+            dodgeRoutine = null;
+        }
+
+        ShowCharacterMesh();
+
+        if (isDodging)
+        {
+            EndDodge();
+        }
+    }
+
+    // 회피 방향으로 빠르게 이동하고, 입력 보정 시간 동안은 방향을 갱신한다.
     private void HandleDodge()
     {
-        if (!dodgeDirectionReady)
-        {
-            dodgeInputBufferTimer -= Time.fixedDeltaTime;
-
-            Vector3 moveDirection = GetMoveDirection();
-
-            if (moveDirection != Vector3.zero)
-            {
-                dodgeDirection = moveDirection;
-                dodgeDirectionReady = true;
-            }
-            else if (dodgeInputBufferTimer <= 0f)
-            {
-                dodgeDirection = transform.forward;
-                dodgeDirectionReady = true;
-            }
-        }
-
-        if (!dodgeDirectionReady) return;
+        UpdateDodgeDirectionFromBuffer();
+        ApplyDodgeVelocity();
 
         dodgeTimer -= Time.fixedDeltaTime;
-
-        Vector3 velocity = dodgeDirection * dodgeSpeed;
-        velocity.y = GetLinearVelocityVector().y;
-        SetLinearVelocity(velocity);
-
-        if (dodgeDirection != Vector3.zero)
-        {
-            Quaternion targetRotation = Quaternion.LookRotation(dodgeDirection);
-
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime);
-        }
 
         if (dodgeTimer <= 0f)
         {
             EndDodge();
         }
+    }
+
+    // 입력 보정 시간 안에 들어온 이동 방향으로 회피 방향을 맞춘다.
+    private void UpdateDodgeDirectionFromBuffer()
+    {
+        if (dodgeInputBufferTimer <= 0f) return;
+
+        dodgeInputBufferTimer -= Time.fixedDeltaTime;
+
+        Vector3 moveDirection = GetMoveDirection();
+
+        if (moveDirection != Vector3.zero)
+        {
+            dodgeDirection = moveDirection;
+            dodgeDirectionReady = true;
+            return;
+        }
+
+        if (dodgeInputBufferTimer > 0f) return;
+
+        if (!dodgeDirectionReady)
+        {
+            dodgeDirection = transform.forward;
+            dodgeDirectionReady = true;
+        }
+    }
+
+    // 현재 회피 방향으로 속도를 적용하고 그 쪽을 바라본다.
+    private void ApplyDodgeVelocity()
+    {
+        if (dodgeDirection == Vector3.zero)
+        {
+            dodgeDirection = transform.forward;
+        }
+
+        Vector3 velocity = dodgeDirection * dodgeSpeed;
+        velocity.y = GetLinearVelocityVector().y;
+        SetLinearVelocity(velocity);
+
+        Quaternion targetRotation = Quaternion.LookRotation(dodgeDirection);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime);
+    }
+
+    // 회피 중에는 공격 애니메이션의 Root Motion이 회피 이동을 덮지 않게 한다.
+    private void OnAnimatorMove()
+    {
+        if (!animator) return;
+
+        if (isDodging) return;
+        if (!animator.applyRootMotion) return;
+
+        Vector3 deltaPosition = animator.deltaPosition;
+        Quaternion deltaRotation = animator.deltaRotation;
+
+        if (rb)
+        {
+            rb.MovePosition(rb.position + deltaPosition);
+            rb.MoveRotation(rb.rotation * deltaRotation);
+            return;
+        }
+
+        transform.position += deltaPosition;
+        transform.rotation = deltaRotation * transform.rotation;
     }
 
     // 회피 상태를 해제하고 달리기를 이어갈 수 있으면 이어간다.
@@ -507,7 +568,7 @@ public class CharacterMovementComponent : NovaComponent
     // 카메라 기준으로 이동 방향을 계산한다.
     private Vector3 GetMoveDirection()
     {
-        if (moveInput == Vector2.zero) return Vector3.zero;
+        if (!HasMoveInput) return Vector3.zero;
         if (mainCameraTransform == null) return Vector3.zero;
 
         Vector3 cameraForward = mainCameraTransform.forward;
@@ -609,6 +670,8 @@ public class CharacterMovementComponent : NovaComponent
         }
 
         if (!meshShown) ShowCharacterMesh();
+
+        dodgeRoutine = null;
     }
 
     // 공격 애니메이션 Trigger를 재생한다.
