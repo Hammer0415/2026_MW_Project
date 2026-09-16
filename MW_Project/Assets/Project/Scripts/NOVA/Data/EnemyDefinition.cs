@@ -39,6 +39,20 @@ public class EnemyDefinition : ScriptableObject
     [SerializeField] private float meleeHitRadius = 1.5f;
     [Tooltip("원거리 공격 사거리")]
     [SerializeField] private float rangedAttackRange = 18f;
+
+    [Header("Melee Dash")]
+    [Tooltip("근거리 적이 대쉬를 시작하는 거리. 0이면 대쉬하지 않는다.")]
+    [Min(0f)]
+    [SerializeField] private float dashTriggerRange = 0f;
+    [Tooltip("대쉬 속도")]
+    [Min(0f)]
+    [SerializeField] private float dashSpeed = 16f;
+    [Tooltip("대쉬 유지 시간")]
+    [Min(0.05f)]
+    [SerializeField] private float dashDuration = 0.28f;
+    [Tooltip("대쉬 쿨타임")]
+    [Min(0f)]
+    [SerializeField] private float dashCooldown = 2.2f;
     [Tooltip("이 적이 사용할 Ability 목록")]
     [SerializeField] private NovaAbility[] abilities;
     [Tooltip("기본 공격 Ability")]
@@ -66,6 +80,10 @@ public class EnemyDefinition : ScriptableObject
     public float AttackDelay => attackDelay;
     public float MeleeHitRadius => meleeHitRadius;
     public float RangedAttackRange => rangedAttackRange;
+    public float DashTriggerRange => dashTriggerRange;
+    public float DashSpeed => dashSpeed;
+    public float DashDuration => dashDuration;
+    public float DashCooldown => dashCooldown;
     public NovaAbility[] Abilities => abilities;
     public NovaAbility AttackAbility => attackAbility;
     public int PhaseCount => phaseCount;

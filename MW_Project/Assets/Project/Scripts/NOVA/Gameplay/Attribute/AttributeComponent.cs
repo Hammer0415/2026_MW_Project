@@ -175,6 +175,14 @@ public class AttributeComponent : NovaComponent, IDamageable
         else if (tag.Contains("Stamina.Recover")) RecoverStamina(0f);
     }
 
+    // 적 Definition 등에서 체력/방어력을 적용한 뒤 현재 값을 최대치로 맞춘다.
+    public void Configure(float newMaxHealth, float newDefense)
+    {
+        maxHealth = Mathf.Max(newMaxHealth, 1f);
+        defense = Mathf.Max(newDefense, 0f);
+        ResetAttributes();
+    }
+
     // 체력과 스테미나를 최대치로 되돌린다.
     public void ResetAttributes()
     {

@@ -8,6 +8,7 @@ public class EnemyBrainComponent : NovaComponent
     {
         Idle,
         Chase,
+        Dash,
         Attack
     }
 
@@ -46,6 +47,24 @@ public class EnemyBrainComponent : NovaComponent
     [SerializeField] private float attackDamage = 10f;
     [Tooltip("플레이어 레이어")]
     [SerializeField] private LayerMask playerLayer;
+    [Tooltip("원거리 공격 사거리. Definition이 있으면 Definition 값을 우선한다.")]
+    [SerializeField] private float rangedAttackRange = 12f;
+
+    [Header("Melee Dash")]
+    [Tooltip("이 거리 안으로 들어오면 근거리 적이 대쉬로 달려든다. 0이면 대쉬하지 않는다.")]
+    [Min(0f)]
+    [SerializeField] private float dashTriggerRange = 5.5f;
+    [Tooltip("대쉬 속도")]
+    [Min(0f)]
+    [SerializeField] private float dashSpeed = 16f;
+    [Tooltip("대쉬가 유지되는 시간")]
+    [Min(0.05f)]
+    [SerializeField] private float dashDuration = 0.28f;
+    [Tooltip("대쉬가 다시 나가기까지 기다리는 시간")]
+    [Min(0f)]
+    [SerializeField] private float dashCooldown = 2.2f;
+    [Tooltip("대쉬 애니메이션 Trigger")]
+    [SerializeField] private string dashTrigger = "isDash";
 
     [Header("Weak Point")]
     [Tooltip("약점 표시 오브젝트")]
@@ -69,6 +88,9 @@ public class EnemyBrainComponent : NovaComponent
     private bool isInBattle;
     private int currentPhase = 1;
     private float lastHealth;
+    private float dashTimer;
+    private float dashCooldownTimer;
+    private Vector3 dashDirection;
 
     public EnemyType EnemyType => definition ? definition.EnemyType : enemyType;
     public bool CanMove => canMove;
@@ -121,11 +143,17 @@ public class EnemyBrainComponent : NovaComponent
         }
 
         if (attackTimer > 0f) attackTimer -= Time.deltaTime;
+        if (dashCooldownTimer > 0f) dashCooldownTimer -= Time.deltaTime;
 
         UpdateAggroTimer();
         UpdateBattleState();
         UpdateBossPhase();
-        UpdateState();
+
+        if (currentState != EnemyState.Dash)
+        {
+            UpdateState();
+        }
+
         HandleCurrentState();
     }
 
@@ -158,8 +186,18 @@ public class EnemyBrainComponent : NovaComponent
         attackDelay = definition.AttackDelay;
         attackHitRange = definition.MeleeHitRadius;
         attackDamage = definition.AttackDamage;
+        rangedAttackRange = definition.RangedAttackRange;
+        dashTriggerRange = definition.DashTriggerRange;
+        dashSpeed = definition.DashSpeed;
+        dashDuration = definition.DashDuration;
+        dashCooldown = definition.DashCooldown;
 
         if (definition.AttackAbility) attackAbility = definition.AttackAbility;
+
+        if (attributes)
+        {
+            attributes.Configure(definition.MaxHealth, definition.Defense);
+        }
     }
 
     // 거리와 어그로에 따라 Idle/Chase/Attack을 고른다.
@@ -193,6 +231,9 @@ public class EnemyBrainComponent : NovaComponent
             case EnemyState.Chase:
                 HandleChase();
                 break;
+            case EnemyState.Dash:
+                HandleDash();
+                break;
             case EnemyState.Attack:
                 HandleAttack();
                 break;
@@ -205,10 +246,16 @@ public class EnemyBrainComponent : NovaComponent
         StopMovement();
     }
 
-    // 플레이어를 향해 이동한다.
+    // 플레이어를 향해 이동한다. 근거리 적은 일정 거리에서 대쉬로 전환한다.
     private void HandleChase()
     {
         if (!playerTarget) return;
+
+        if (CanStartDash())
+        {
+            StartDash();
+            return;
+        }
 
         Vector3 direction = playerTarget.position - transform.position;
         direction.y = 0f;
@@ -248,6 +295,69 @@ public class EnemyBrainComponent : NovaComponent
         attackTimer = attackDelay;
     }
 
+    // 플레이어 방향으로 짧게 돌진한다.
+    private void HandleDash()
+    {
+        dashTimer -= Time.deltaTime;
+
+        if (dashDirection.sqrMagnitude > 0.01f)
+        {
+            Vector3 velocity = dashDirection * dashSpeed;
+            velocity.y = RigidbodyVelocity.Get(rb).y;
+            RigidbodyVelocity.Set(rb, velocity);
+            RotateTo(dashDirection);
+        }
+
+        if (dashTimer > 0f) return;
+
+        dashCooldownTimer = dashCooldown;
+
+        float distance = playerTarget ? Vector3.Distance(transform.position, playerTarget.position) : float.MaxValue;
+
+        if (distance <= GetCurrentAttackRange())
+        {
+            currentState = EnemyState.Attack;
+            HandleAttack();
+            return;
+        }
+
+        currentState = EnemyState.Chase;
+    }
+
+    // 근거리 적이 대쉬 거리에 들어왔고 쿨타임이 끝났는지 확인한다.
+    private bool CanStartDash()
+    {
+        if (EnemyType != EnemyType.Melee) return false;
+        if (dashTriggerRange <= 0f) return false;
+        if (dashCooldownTimer > 0f) return false;
+        if (!playerTarget) return false;
+
+        float distance = Vector3.Distance(transform.position, playerTarget.position);
+
+        if (distance > dashTriggerRange) return false;
+        if (distance <= GetCurrentAttackRange()) return false;
+
+        return true;
+    }
+
+    // 대쉬를 시작하고 대쉬 애니메이션을 재생한다.
+    private void StartDash()
+    {
+        Vector3 direction = playerTarget.position - transform.position;
+        direction.y = 0f;
+
+        if (direction.sqrMagnitude <= 0.01f) return;
+
+        dashDirection = direction.normalized;
+        dashTimer = dashDuration;
+        currentState = EnemyState.Dash;
+
+        if (animator && !string.IsNullOrEmpty(dashTrigger))
+        {
+            animator.SetTrigger(dashTrigger);
+        }
+    }
+
     // 공격 애니메이션을 재생한다. 실제 판정은 Animation Event에서 처리한다.
     private void TryAttack()
     {
@@ -275,10 +385,16 @@ public class EnemyBrainComponent : NovaComponent
         abilitySystem.TryActivateAbility(attackAbility.AbilityTag);
     }
 
-    // Animation Event: 근거리 공격 판정을 실행한다.
+    // Animation Event: 근거리 공격 판정을 실행한다. 원거리 적은 레이로 발사한다.
     public void OnAttackHit()
     {
         if (!playerTarget) return;
+
+        if (EnemyType == EnemyType.Ranged)
+        {
+            FireRangedAttack();
+            return;
+        }
 
         Vector3 hitPosition = attackPoint ? attackPoint.position : transform.position;
         Collider[] players = Physics.OverlapSphere(hitPosition, attackHitRange, playerLayer);
@@ -319,6 +435,58 @@ public class EnemyBrainComponent : NovaComponent
 
             break;
         }
+    }
+
+    // 플레이어를 향해 원거리 레이 공격을 발사한다.
+    private void FireRangedAttack()
+    {
+        Vector3 origin = attackPoint ? attackPoint.position : transform.position + Vector3.up * 1.2f;
+        Vector3 targetPosition = playerTarget.position + Vector3.up * 1f;
+        Vector3 direction = targetPosition - origin;
+
+        if (direction.sqrMagnitude <= 0.001f) return;
+
+        direction.Normalize();
+        float range = GetCurrentAttackRange();
+
+        Debug.DrawRay(origin, direction * range, Color.cyan, 1f);
+
+        if (!Physics.Raycast(origin, direction, out RaycastHit hit, range, playerLayer, QueryTriggerInteraction.Ignore))
+        {
+            return;
+        }
+
+        NovaActor player = hit.collider.GetComponentInParent<NovaActor>();
+
+        if (!player) return;
+
+        CharacterMovementComponent movement = player.GetComponent<CharacterMovementComponent>();
+
+        if (movement && movement.TryConsumePerfectDodge())
+        {
+            WeakPointComponent playerWeakPoint = player.GetComponent<WeakPointComponent>();
+
+            if (playerWeakPoint) playerWeakPoint.ActivateWeakPoint();
+            if (weakPoint) weakPoint.SetActive(true);
+
+            return;
+        }
+
+        if (combat)
+        {
+            DamageInfo damageInfo = new DamageInfo(Owner, attackDamage)
+            {
+                Target = player,
+                HitPoint = hit.point,
+                HitNormal = hit.normal,
+                CanBePerfectDodged = false
+            };
+
+            combat.ApplyDamage(player, damageInfo);
+            return;
+        }
+
+        if (player.Attributes) player.Attributes.TakeDamage(attackDamage);
     }
 
     // 플레이어에게 피격되면 어그로를 갱신한다.
@@ -412,9 +580,9 @@ public class EnemyBrainComponent : NovaComponent
     // 원거리 적은 더 먼 거리에서 공격을 시작한다.
     private float GetCurrentAttackRange()
     {
-        if (EnemyType == EnemyType.Ranged && definition)
+        if (EnemyType == EnemyType.Ranged)
         {
-            return definition.RangedAttackRange;
+            return rangedAttackRange > 0f ? rangedAttackRange : attackRange;
         }
 
         return attackRange;
@@ -459,5 +627,11 @@ public class EnemyBrainComponent : NovaComponent
         Vector3 hitPosition = attackPoint ? attackPoint.position : transform.position;
 
         Gizmos.DrawWireSphere(hitPosition, attackHitRange);
+
+        if (dashTriggerRange > 0f)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(transform.position, dashTriggerRange);
+        }
     }
 }

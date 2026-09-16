@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09579340341174fcb9f936db6f44a193, type: 3}
+  m_Name: EnemyDefinition_Ranged
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyDefinition
+  displayName: "\uC6D0\uAC70\uB9AC"
+  enemyType: 1
+  maxHealth: 55
+  attackDamage: 24
+  defense: 0
+  poise: 0
+  detectionRange: 18
+  attackRange: 12
+  moveSpeed: 2.6
+  rotationSpeed: 8
+  aggroDuration: 6
+  attackDelay: 1.7
+  meleeHitRadius: 1.2
+  rangedAttackRange: 14
+  dashTriggerRange: 0
+  dashSpeed: 16
+  dashDuration: 0.28
+  dashCooldown: 2.2
+  abilities: []
+  attackAbility: {fileID: 0}
+  phaseCount: 1
+  phaseHealthRatio: 0.5

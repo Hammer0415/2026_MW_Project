@@ -1,7 +1,9 @@
 fileFormatVersion: 2
 guid: a8078d5bc810cd244a1fe768c327bca7
 ScriptedImporter:
-  internalIDToNameTable: []
+  internalIDToNameTable:
+  - first: {classID: 114, fileID: -944628639613478452}
+    second: Player Input
   externalObjects: {}
   serializedVersion: 2
   userData: 
