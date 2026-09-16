@@ -39,7 +39,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _AOTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 3ea152392fcd34558a13ef555afff9d9, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BaseMap:
@@ -79,7 +79,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MatcapTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 8227f0035d77a4aa9b65a9190ae6e9bd, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -87,7 +87,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: e3aeca7f4881f41469c9304cfbbd6638, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _OcclusionMap:
@@ -132,7 +132,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AOIntensity: 0
+    - _AOIntensity: 0.5
     - _AddPrecomputedVelocity: 0
     - _AlphaClip: 0
     - _AlphaToMask: 0
@@ -150,13 +150,13 @@ Material:
     - _DstBlendAlpha: 0
     - _EmissionIntensity: 0
     - _EnvironmentReflections: 1
-    - _FakeShadowSmooth: 1
+    - _FakeShadowSmooth: 3
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _MetalIntensity: 0
+    - _MetalIntensity: 0.5
     - _Metallic: 0
-    - _NormalIntensity: 0
+    - _NormalIntensity: 1
     - _OcclusionStrength: 1
     - _OutlineFadeEnd: 20
     - _OutlineFadeStart: 0
@@ -165,12 +165,12 @@ Material:
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _RimPower: 10
-    - _ShadowRange: 0.5
-    - _ShadowSmooth: 0.5
+    - _ShadowRange: 0.7
+    - _ShadowSmooth: 0.9
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
-    - _SpecularIntensity: 0
+    - _SpecularIntensity: 0.5
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _StencilComp: 6
@@ -184,8 +184,8 @@ Material:
     - _XRMotionVectorsPass: 1
     - _ZTest: 4
     - _ZWrite: 1
-    - _nonMetalIntensity: 0
-    - _nonMetalSmooth: 0.001
+    - _nonMetalIntensity: 0.5
+    - _nonMetalSmooth: 0.5
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
@@ -193,7 +193,7 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 0}
     - _OutlineColor: {r: 0.32200068, g: 0.3357339, b: 0.33962262, a: 1}
     - _RimColor: {r: 0.8349056, g: 1, b: 0.9902104, a: 1}
-    - _ShadowColor: {r: 0.5566038, g: 0.5566038, b: 0.5566038, a: 1}
+    - _ShadowColor: {r: 0.1525899, g: 0.19452591, b: 0.254717, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

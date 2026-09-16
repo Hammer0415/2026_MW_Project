@@ -1,16 +1,28 @@
 using UnityEngine;
 
+public enum PlayState
+{
+    Playing,
+    InBattle,
+    Paused,
+    PlayerDead
+}
+
+[AddComponentMenu("NOVA/Core/Game State")]
 public class GameState : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    [Header("State")]
+    [ReadOnly]
+    [Tooltip("현재 게임 상태")]
+    [SerializeField] private PlayState currentState = PlayState.Playing;
 
-    // Update is called once per frame
-    void Update()
+    public PlayState CurrentState => currentState;
+    public bool IsBattle => currentState == PlayState.InBattle;
+    public bool IsPlayerDead => currentState == PlayState.PlayerDead;
+
+    // 게임 상태를 변경한다.
+    public void SetState(PlayState state)
     {
-        
+        currentState = state;
     }
 }

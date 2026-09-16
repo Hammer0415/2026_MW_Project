@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+[AddComponentMenu("NOVA/UI/Attribute Bar UI")]
 public class AttributeBarUI : MonoBehaviour
 {
     [Header("UI")]
@@ -10,6 +11,7 @@ public class AttributeBarUI : MonoBehaviour
     [SerializeField] private Slider delayedBar;
 
     [Header("Attribute")]
+    [Tooltip("값을 읽어올 AttributeComponent")]
     [SerializeField] private AttributeComponent attribute;
 
     [Header("Type")]
@@ -26,20 +28,13 @@ public class AttributeBarUI : MonoBehaviour
 
     private void OnEnable()
     {
-        if (!attribute) return;
-
-        if (isHealth) attribute.OnHealthChanged += HandleHealthChanged;
-        else attribute.OnStaminaChanged += HandleStaminaChanged;
-
+        BindAttribute(attribute);
         UpdateInitialValue();
     }
 
     private void OnDisable()
     {
-        if (!attribute) return;
-
-        if (isHealth) attribute.OnHealthChanged -= HandleHealthChanged;
-        else attribute.OnStaminaChanged -= HandleStaminaChanged;
+        UnbindAttribute(attribute);
     }
 
     private void Update()
@@ -53,15 +48,16 @@ public class AttributeBarUI : MonoBehaviour
             return;
         }
 
-        if (delayedBar.value > currentBar.value)
+        if (currentBar && delayedBar.value > currentBar.value)
         {
             delayedBar.value = Mathf.MoveTowards(delayedBar.value, currentBar.value, delayedSpeed * Time.deltaTime);
         }
     }
 
+    // 현재 Attribute 값으로 슬라이더를 맞춘다.
     private void UpdateInitialValue()
     {
-        if (!currentBar) return;
+        if (!currentBar || !attribute) return;
 
         if (isHealth)
         {
@@ -81,6 +77,7 @@ public class AttributeBarUI : MonoBehaviour
         }
     }
 
+    // 체력 변경 이벤트를 슬라이더에 반영한다.
     private void HandleHealthChanged(float current, float max)
     {
         if (!currentBar) return;
@@ -102,6 +99,7 @@ public class AttributeBarUI : MonoBehaviour
         }
     }
 
+    // 스테미나 변경 이벤트를 슬라이더에 반영한다.
     private void HandleStaminaChanged(float current, float max)
     {
         if (!currentBar) return;
@@ -110,13 +108,10 @@ public class AttributeBarUI : MonoBehaviour
         currentBar.value = current;
     }
 
+    // 다른 캐릭터의 Attribute로 바인딩을 교체한다.
     public void SetAttribute(AttributeComponent newAttribute)
     {
-        if (attribute != null)
-        {
-            if (isHealth) attribute.OnHealthChanged -= HandleHealthChanged;
-            else attribute.OnStaminaChanged -= HandleStaminaChanged;
-        }
+        UnbindAttribute(attribute);
 
         attribute = newAttribute;
 
@@ -124,18 +119,33 @@ public class AttributeBarUI : MonoBehaviour
         {
             if (currentBar) currentBar.value = 0f;
             if (delayedBar) delayedBar.value = 0f;
-
             return;
         }
 
-        if (isHealth) attribute.OnHealthChanged += HandleHealthChanged;
-        else attribute.OnStaminaChanged += HandleStaminaChanged;
-
+        BindAttribute(attribute);
         UpdateInitialValue();
     }
 
     public void ClearAttribute()
     {
         SetAttribute(null);
+    }
+
+    // Attribute 이벤트를 구독한다.
+    private void BindAttribute(AttributeComponent target)
+    {
+        if (!target) return;
+
+        if (isHealth) target.OnHealthChanged += HandleHealthChanged;
+        else target.OnStaminaChanged += HandleStaminaChanged;
+    }
+
+    // Attribute 이벤트 구독을 해제한다.
+    private void UnbindAttribute(AttributeComponent target)
+    {
+        if (!target) return;
+
+        if (isHealth) target.OnHealthChanged -= HandleHealthChanged;
+        else target.OnStaminaChanged -= HandleStaminaChanged;
     }
 }

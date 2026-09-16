@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+[AddComponentMenu("NOVA/Camera/Camera Controller")]
 public class CameraController : MonoBehaviour
 {
     [Header("Follow Settings")]
@@ -25,10 +26,12 @@ public class CameraController : MonoBehaviour
     [Tooltip("FOV 변화 부드러움")]
     [SerializeField] private float zoomSmoothSpeed = 10f;
 
-    private Camera mainCamera = null;
+    [Header("Combat Zoom")]
+    [Tooltip("락온 중 추가로 당길 FOV 값. 0이면 기존과 같다.")]
+    [SerializeField] private float lockOnFOVOffset = 0f;
 
+    private Camera mainCamera;
     private float targetFOV;
-
     private float zoomInput;
     private bool zoomIsMouse;
 
@@ -39,12 +42,13 @@ public class CameraController : MonoBehaviour
         mainCamera = Camera.main;
 
         targetFOV = defaultFOV;
-        mainCamera.fieldOfView = defaultFOV;
+
+        if (mainCamera) mainCamera.fieldOfView = defaultFOV;
     }
 
     private void Start()
     {
-        CursorController.Instance.CursorOnOff();
+        if (CursorController.Instance) CursorController.Instance.CursorOnOff();
     }
 
     private void Update()
@@ -57,6 +61,7 @@ public class CameraController : MonoBehaviour
         HandleLook();
     }
 
+    // 락온 중이면 타겟을, 아니면 카메라 암을 바라본다.
     private void HandleLook()
     {
         if (cameraArm == null) return;
@@ -71,25 +76,32 @@ public class CameraController : MonoBehaviour
         }
     }
 
+    // 줌 입력으로 목표 FOV를 바꾸고 부드럽게 보간한다.
     private void HandleZoom()
     {
         if (!mainCamera) return;
 
         if (Mathf.Abs(zoomInput) > 0.01f)
         {
-            float zoomAmount;
-
-            if (zoomIsMouse) zoomAmount = zoomInput * zoomSensitivity;
-            else zoomAmount = zoomInput * zoomSensitivity * (Time.deltaTime * 10f);
+            float zoomAmount = zoomIsMouse
+                ? zoomInput * zoomSensitivity
+                : zoomInput * zoomSensitivity * (Time.deltaTime * 10f);
 
             targetFOV -= zoomAmount;
-
             targetFOV = Mathf.Clamp(targetFOV, minFOV, maxFOV);
         }
 
-        mainCamera.fieldOfView = Mathf.Lerp(mainCamera.fieldOfView, targetFOV, zoomSmoothSpeed * Time.deltaTime);
+        float desiredFOV = targetFOV;
+
+        if (targetingComponent && targetingComponent.IsTargeting)
+        {
+            desiredFOV = Mathf.Clamp(targetFOV + lockOnFOVOffset, minFOV, maxFOV);
+        }
+
+        mainCamera.fieldOfView = Mathf.Lerp(mainCamera.fieldOfView, desiredFOV, zoomSmoothSpeed * Time.deltaTime);
     }
 
+    // 플레이어와 락온 타겟 사이를 바라본다.
     private void HandleLookAtTarget()
     {
         NovaCharacter target = targetingComponent.CurrentTarget;
@@ -101,7 +113,6 @@ public class CameraController : MonoBehaviour
         Vector3 playerPivot = cameraArm.position;
         Vector3 targetPosition = target.transform.position + Vector3.up * targetingComponent.TargetHeight;
         Vector3 lockOnFocusPoint = Vector3.Lerp(playerPivot, targetPosition, lockOnFocusRatio);
-
         Vector3 direction = lockOnFocusPoint - transform.position;
 
         if (direction.sqrMagnitude <= 0.001f) return;
@@ -115,17 +126,17 @@ public class CameraController : MonoBehaviour
         transform.rotation = Quaternion.Euler(currentEuler);
     }
 
+    // 카메라 암의 회전을 따라간다.
     private void HandleLookAtArm()
     {
         Quaternion targetRotation = Quaternion.Euler(cameraArm.eulerAngles.x, cameraArm.eulerAngles.y, 0f);
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, lookAtSpeed * Time.deltaTime);
     }
 
+    // 줌 입력을 받는다.
     public void OnZoom(InputAction.CallbackContext context)
     {
         zoomInput = context.ReadValue<float>();
-
-        if (context.control.device is Mouse) zoomIsMouse = true;
-        else zoomIsMouse = false;
+        zoomIsMouse = context.control.device is Mouse;
     }
 }
