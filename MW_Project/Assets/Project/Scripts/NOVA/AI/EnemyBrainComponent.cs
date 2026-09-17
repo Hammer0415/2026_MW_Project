@@ -413,6 +413,13 @@ public class EnemyBrainComponent : NovaComponent
         dashCooldownTimer = dashCooldown;
         StopDashPresentation();
 
+        // 근접 대쉬는 공격 시작이므로, 대쉬가 끝나도 공격 모션이 끝날 때까지 Attack을 유지한다.
+        if (isAttackLocked)
+        {
+            currentState = EnemyState.Attack;
+            return;
+        }
+
         if (!CanPerceivePlayer())
         {
             currentState = EnemyState.Idle;
@@ -457,7 +464,7 @@ public class EnemyBrainComponent : NovaComponent
         attackTimer = attackDelay;
     }
 
-    // 대쉬를 시작하고 대쉬 애니메이션을 재생한다.
+    // 대쉬를 시작한다. 근접 적은 이때부터 공격 애니메이션을 재생한다.
     private void StartDash()
     {
         Vector3 direction = playerTarget.position - transform.position;
@@ -471,10 +478,28 @@ public class EnemyBrainComponent : NovaComponent
 
         PlayDashPresentation();
 
+        if (EnemyType == EnemyType.Melee)
+        {
+            StartMeleeDashAttack();
+            return;
+        }
+
         if (animator && !string.IsNullOrEmpty(dashTrigger))
         {
             animator.SetTrigger(dashTrigger);
         }
+    }
+
+    // 근접 대쉬는 돌진과 동시에 공격 애니메이션을 시작한다.
+    private void StartMeleeDashAttack()
+    {
+        BeginAttackLock();
+        attackTimer = attackDelay;
+
+        if (!animator || string.IsNullOrEmpty(attackTrigger)) return;
+
+        animator.ResetTrigger(dashTrigger);
+        animator.SetTrigger(attackTrigger);
     }
 
     private bool IsFacingPlayer()
@@ -633,14 +658,22 @@ public class EnemyBrainComponent : NovaComponent
         isAttackLocked = true;
         attackLockGrace = 0.2f;
         attackHitApplied = false;
-        StopMovement();
+
+        if (currentState != EnemyState.Dash)
+        {
+            StopMovement();
+        }
     }
 
     private void TickAttackLock()
     {
         if (!isAttackLocked) return;
 
-        StopMovement();
+        if (currentState != EnemyState.Dash)
+        {
+            StopMovement();
+        }
+
         TryFireAttackHitFromAnimation();
 
         if (attackLockGrace > 0f)
