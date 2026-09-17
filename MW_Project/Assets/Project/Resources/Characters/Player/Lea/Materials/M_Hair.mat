@@ -160,7 +160,7 @@ Material:
     - _OcclusionStrength: 1
     - _OutlineFadeEnd: 20
     - _OutlineFadeStart: 0
-    - _OutlineWidth: 0.3
+    - _OutlineWidth: 0.2
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
