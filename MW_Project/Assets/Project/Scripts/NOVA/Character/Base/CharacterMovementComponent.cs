@@ -723,6 +723,10 @@ public class CharacterMovementComponent : NovaComponent
         {
             sprintHeld = true;
 
+            PerfectDodgeComponent perfectDodge = GetComponent<PerfectDodgeComponent>();
+
+            if (perfectDodge && perfectDodge.BlocksOtherActions) return;
+
             if (abilitySystem != null)
             {
                 abilitySystem.TryActivateAbility(abilitySystem.DodgeTag);

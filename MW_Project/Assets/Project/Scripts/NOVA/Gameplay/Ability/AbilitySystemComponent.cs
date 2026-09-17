@@ -86,7 +86,11 @@ public class AbilitySystemComponent : NovaComponent
     {
         if (!context.started) return;
 
-        if (perfectDodge && perfectDodge.TryQueueStrongAttack()) return;
+        if (perfectDodge)
+        {
+            if (perfectDodge.TrySubmitCharge()) return;
+            if (perfectDodge.IsChoosing) return;
+        }
 
         if (isComboActive)
         {
@@ -97,18 +101,20 @@ public class AbilitySystemComponent : NovaComponent
         StartCombo();
     }
 
-    // 퍼펙트 회피로 받아 둔 기본 공격을 시작한다.
-    public void StartBufferedBasicAttack()
+    // 퍼펙트 회피 강공격 QTE가 끝난 뒤 기본 공격을 시작한다.
+    // animationTriggerOverride가 있으면 나중에 강공격 전용 애니로 바꿀 수 있다.
+    public void StartBufferedBasicAttack(string animationTriggerOverride = null)
     {
         if (isComboActive) return;
 
-        StartCombo();
+        StartCombo(animationTriggerOverride);
     }
 
     // 스킬 입력. 지정된 스킬 Ability를 시전한다.
     public void OnSkill(InputAction.CallbackContext context)
     {
         if (!context.started) return;
+        if (perfectDodge && perfectDodge.BlocksOtherActions) return;
 
         TryActivateAbility(SkillTag);
     }
@@ -117,6 +123,7 @@ public class AbilitySystemComponent : NovaComponent
     public void OnUltimate(InputAction.CallbackContext context)
     {
         if (!context.started) return;
+        if (perfectDodge && perfectDodge.BlocksOtherActions) return;
 
         TryActivateAbility(UltimateTag);
     }
@@ -340,7 +347,7 @@ public class AbilitySystemComponent : NovaComponent
     }
 
     // Combo01을 시작하고 이동을 잠근 뒤 적을 바라보게 한다.
-    private void StartCombo()
+    private void StartCombo(string animationTriggerOverride = null)
     {
         queuedComboCount = 1;
         isComboActive = true;
@@ -350,7 +357,8 @@ public class AbilitySystemComponent : NovaComponent
         comboMoveUnlocked = false;
 
         SetComboIndex(1);
-        PlayAttackAnimation(basicAttackTrigger);
+        string triggerName = string.IsNullOrEmpty(animationTriggerOverride) ? basicAttackTrigger : animationTriggerOverride;
+        PlayAttackAnimation(triggerName);
 
         if (combat) combat.StartAttackFacing();
     }

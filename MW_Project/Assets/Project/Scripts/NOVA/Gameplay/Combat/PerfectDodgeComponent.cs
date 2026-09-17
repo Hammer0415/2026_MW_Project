@@ -1,8 +1,16 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [AddComponentMenu("NOVA/Combat/Perfect Dodge Component")]
 public class PerfectDodgeComponent : NovaComponent
 {
+    enum ChargeResult
+    {
+        None,
+        Success,
+        Partial
+    }
+
     [Header("Slow Motion")]
     [Tooltip("퍼펙트 회피 후 슬로모션이 유지되는 실제 시간")]
     [Min(0.1f)]
@@ -12,15 +20,40 @@ public class PerfectDodgeComponent : NovaComponent
     [SerializeField] private float slowMotionTimeScale = 0.1f;
 
     [Header("Strong Attack")]
-    [Tooltip("슬로모션 중 공격 데미지 배율")]
+    [Tooltip("강공격 성공 시 데미지 배율")]
     [Min(1f)]
     [SerializeField] private float strongAttackDamageMultiplier = 2f;
-    [Tooltip("강공격을 맞은 적이 경직되는 시간")]
+    [Tooltip("판정 실패 시 데미지 배율. 일반 공격보다 세고 성공보다 약하다.")]
+    [Min(1f)]
+    [SerializeField] private float partialDamageMultiplier = 1.35f;
+    [Tooltip("강공격 성공 시 적이 경직되는 시간")]
     [Min(0f)]
     [SerializeField] private float strongAttackStunDuration = 2f;
-    [Tooltip("퍼펙트 회피 후 강공격이 나가기까지 기다리는 실제 시간")]
-    [Min(0f)]
-    [SerializeField] private float strongAttackDelay = 0.8f;
+    [Tooltip("강공격에 쓸 애니 Trigger. 비어 있으면 지금 기본 공격 애니를 쓴다.")]
+    [SerializeField] private string strongAttackAnimationTrigger;
+
+    [Header("Charge Timing")]
+    [Tooltip("스테미나가 가득일 때 원이 모이는 시간")]
+    [Min(0.1f)]
+    [SerializeField] private float minChargeDuration = 0.45f;
+    [Tooltip("스테미나가 없을 때 원이 모이는 시간")]
+    [Min(0.1f)]
+    [SerializeField] private float maxChargeDuration = 1.4f;
+
+    [Header("Charge Ring")]
+    [Tooltip("줄어들기 시작하는 원의 반지름")]
+    [Min(0.5f)]
+    [SerializeField] private float chargeStartRadius = 4.2f;
+    [Tooltip("판정선 반지름")]
+    [Min(0.2f)]
+    [SerializeField] private float judgmentRadius = 1.35f;
+    [Tooltip("판정선과 겹쳤다고 볼 거리")]
+    [Min(0.05f)]
+    [SerializeField] private float judgmentWindow = 0.22f;
+    [Tooltip("링을 바닥에서 띄울 높이")]
+    [SerializeField] private float ringHeight = 0.06f;
+    [SerializeField] private Color shrinkingRingColor = new Color(1f, 0.72f, 0.18f, 0.95f);
+    [SerializeField] private Color judgmentRingColor = new Color(0.95f, 0.95f, 0.95f, 0.9f);
 
     [Header("Camera")]
     [Tooltip("퍼펙트 회피 대상에게 카메라를 맞출 높이")]
@@ -33,29 +66,55 @@ public class PerfectDodgeComponent : NovaComponent
     [ReadOnly]
     [SerializeField] private bool isActive;
     [ReadOnly]
+    [SerializeField] private bool isCharging;
+    [ReadOnly]
     [SerializeField] private float windowTimer;
 
     private CameraArmController cameraArm;
     private CameraController cameraController;
     private AbilitySystemComponent abilitySystem;
+    private CharacterMovementComponent movement;
+    private AttributeComponent attributes;
     private NovaCharacter focusTarget;
     private bool ownsTimeScale;
     private float defaultFixedDeltaTime;
     private bool wasDodging;
-    private float delayTimer;
-    private bool queuedStrongAttack;
+    private float chargeTimer;
+    private float chargeDuration;
+    private ChargeResult resolvedResult;
+    private float resolvedTimer;
+    private LineRenderer shrinkingRing;
+    private LineRenderer judgmentRing;
+    const int RingSegments = 64;
+    const float ResolvedAttackLifetime = 1.6f;
 
     public bool IsActive => isActive;
-    public bool IsStrongAttackReady => isActive;
-    public NovaCharacter FocusTarget => focusTarget;
+    public bool IsChoosing => isActive && !isCharging && resolvedResult == ChargeResult.None;
+    public bool IsCharging => isCharging;
+    public bool BlocksOtherActions => IsChoosing || isCharging;
+    public bool ShouldPreferFocusTarget => (isActive || isCharging || resolvedResult != ChargeResult.None) && FocusTarget;
+    public bool HasResolvedResult => resolvedResult != ChargeResult.None;
+    public NovaCharacter FocusTarget => focusTarget && !focusTarget.IsDead ? focusTarget : null;
     public float StrongAttackDamageMultiplier => strongAttackDamageMultiplier;
     public float StrongAttackStunDuration => strongAttackStunDuration;
+    public float ResolvedDamageMultiplier
+    {
+        get
+        {
+            if (resolvedResult == ChargeResult.Success) return strongAttackDamageMultiplier;
+            if (resolvedResult == ChargeResult.Partial) return partialDamageMultiplier;
+            return 1f;
+        }
+    }
+    public bool ResolvedAppliesStun => resolvedResult == ChargeResult.Success;
 
     protected override void Awake()
     {
         base.Awake();
 
         abilitySystem = GetComponent<AbilitySystemComponent>();
+        movement = GetComponent<CharacterMovementComponent>();
+        attributes = GetComponent<AttributeComponent>();
         defaultFixedDeltaTime = Time.fixedDeltaTime;
 
         if (Camera.main)
@@ -63,6 +122,8 @@ public class PerfectDodgeComponent : NovaComponent
             cameraArm = Camera.main.GetComponentInParent<CameraArmController>();
             cameraController = Camera.main.GetComponent<CameraController>();
         }
+
+        CreateRings();
     }
 
     private void OnDestroy()
@@ -71,20 +132,25 @@ public class PerfectDodgeComponent : NovaComponent
         {
             RestoreTimeScale();
         }
+
+        DestroyRing(shrinkingRing);
+        DestroyRing(judgmentRing);
     }
 
     private void Update()
     {
         DetectDodgeStart();
         TickWindow();
-        TickStrongAttackDelay();
+        TickCharge();
+        TickResolvedResult();
+        UpdateRings();
     }
 
     // 회피가 시작되면 열려 있는 적 공격 윈도우와 맞춰본다.
     private void DetectDodgeStart()
     {
-        CharacterMovementComponent movement = Owner && Owner.Movement ? Owner.Movement : GetComponent<CharacterMovementComponent>();
-        bool dodging = movement && movement.IsDodging;
+        CharacterMovementComponent ownerMovement = movement ? movement : GetComponent<CharacterMovementComponent>();
+        bool dodging = ownerMovement && ownerMovement.IsDodging;
 
         if (dodging && !wasDodging)
         {
@@ -94,10 +160,12 @@ public class PerfectDodgeComponent : NovaComponent
         wasDodging = dodging;
     }
 
-    // 슬로모션 창이 끝나면 카메라와 시간을 되돌린다.
+    // 슬로모션 창이 끝나면 카메라와 시간을 되돌린다. 차징 중이면 기다린다.
     private void TickWindow()
     {
         if (!isActive) return;
+        if (isCharging) return;
+        if (resolvedResult != ChargeResult.None) return;
 
         windowTimer -= Time.unscaledDeltaTime;
 
@@ -108,10 +176,42 @@ public class PerfectDodgeComponent : NovaComponent
         }
     }
 
+    private void TickCharge()
+    {
+        if (!isCharging) return;
+
+        if (focusTarget && focusTarget.IsDead)
+        {
+            CancelCharge();
+            return;
+        }
+
+        chargeTimer += Time.unscaledDeltaTime;
+
+        if (chargeTimer >= chargeDuration)
+        {
+            ResolveCharge(ChargeResult.Partial);
+        }
+    }
+
+    private void TickResolvedResult()
+    {
+        if (resolvedResult == ChargeResult.None) return;
+        if (isCharging) return;
+
+        resolvedTimer -= Time.unscaledDeltaTime;
+
+        if (resolvedTimer <= 0f)
+        {
+            RestoreCamera();
+            EndWindow();
+        }
+    }
+
     // 적의 퍼펙트 회피 타이밍에 범위 안에서 회피하면 슬로모션을 시작한다.
     public bool TryActivate(NovaActor attacker)
     {
-        if (isActive) return false;
+        if (isActive || isCharging) return false;
         if (!attacker) return false;
 
         NovaCharacter attackerCharacter = attacker as NovaCharacter;
@@ -121,10 +221,12 @@ public class PerfectDodgeComponent : NovaComponent
         if (attackerCharacter.IsDead) return false;
 
         isActive = true;
+        isCharging = false;
+        resolvedResult = ChargeResult.None;
         focusTarget = attackerCharacter;
         windowTimer = slowMotionDuration;
-        delayTimer = strongAttackDelay;
-        queuedStrongAttack = false;
+        chargeTimer = 0f;
+        resolvedTimer = 0f;
 
         ApplySlowMotion();
         FocusCamera(focusTarget.transform);
@@ -133,64 +235,60 @@ public class PerfectDodgeComponent : NovaComponent
         return true;
     }
 
-    // 딜레이가 끝나기 전에 들어온 공격 입력을 받아 두고, 끝나면 강공격을 나간다.
-    public bool TryQueueStrongAttack()
+    // 슬로모 중에 우클릭하면 타임스케일을 되돌리고 차징 QTE를 시작한다.
+    public void OnStrongAttackCharge(InputAction.CallbackContext context)
     {
-        if (!isActive) return false;
+        if (!context.started) return;
 
-        queuedStrongAttack = true;
-
-        if (delayTimer <= 0f)
-        {
-            FireQueuedStrongAttack();
-        }
-
-        return true;
+        TryStartCharge();
     }
 
-    // 퍼펙트 회피 직후 대기 시간이 끝나면 받아 둔 강공격을 실행한다.
-    private void TickStrongAttackDelay()
+    public bool TryStartCharge()
     {
-        if (!isActive) return;
-        if (delayTimer <= 0f) return;
+        if (!IsChoosing) return false;
 
-        delayTimer = Mathf.Max(delayTimer - Time.unscaledDeltaTime, 0f);
-
-        if (delayTimer > 0f) return;
-
-        FireQueuedStrongAttack();
-    }
-
-    // 받아 둔 강공격을 바로 시작한다. 회피 중이면 회피를 끊는다.
-    private void FireQueuedStrongAttack()
-    {
-        if (!isActive) return;
-        if (!queuedStrongAttack) return;
-
-        queuedStrongAttack = false;
+        isCharging = true;
+        chargeTimer = 0f;
+        chargeDuration = GetChargeDuration();
 
         RestoreTimeScale();
 
-        CharacterMovementComponent movement = Owner && Owner.Movement ? Owner.Movement : GetComponent<CharacterMovementComponent>();
+        if (movement)
+        {
+            movement.CancelDodge();
+            movement.SetMovementEnabled(false);
+        }
 
-        if (movement) movement.CancelDodge();
-
-        if (abilitySystem) abilitySystem.StartBufferedBasicAttack();
+        SetRingsVisible(true);
+        return true;
     }
 
-    // 슬로모션 중 공격이 맞으면 강공격으로 처리하고 창을 닫는다.
+    // 차징 중 좌클릭으로 판정선을 맞춘다.
+    public bool TrySubmitCharge()
+    {
+        if (!isCharging) return false;
+
+        float currentRadius = GetCurrentChargeRadius();
+        bool success = Mathf.Abs(currentRadius - judgmentRadius) <= judgmentWindow;
+        ResolveCharge(success ? ChargeResult.Success : ChargeResult.Partial);
+        return true;
+    }
+
+    // 슬로모션 중 공격이 맞으면 성공 시에만 스턴하고 창을 닫는다.
     public bool TryApplyStrongAttack(NovaActor hitTarget)
     {
-        if (!isActive) return false;
+        if (resolvedResult == ChargeResult.None) return false;
         if (!hitTarget) return false;
 
-        EnemyBrainComponent brain = hitTarget.GetComponent<EnemyBrainComponent>();
+        if (resolvedResult == ChargeResult.Success)
+        {
+            EnemyBrainComponent brain = hitTarget.GetComponent<EnemyBrainComponent>();
 
-        if (brain) brain.Stun(strongAttackStunDuration);
+            if (brain) brain.Stun(strongAttackStunDuration);
+        }
 
         RestoreCamera();
         EndWindow();
-
         return true;
     }
 
@@ -209,7 +307,51 @@ public class PerfectDodgeComponent : NovaComponent
         }
     }
 
-    // 플레이어와 적 사이를 바라보게 해서 둘 다 화면에 남긴다.
+    private void ResolveCharge(ChargeResult result)
+    {
+        if (!isCharging) return;
+
+        isCharging = false;
+        resolvedResult = result;
+        resolvedTimer = ResolvedAttackLifetime;
+        SetRingsVisible(false);
+
+        if (abilitySystem) abilitySystem.StartBufferedBasicAttack(strongAttackAnimationTrigger);
+    }
+
+    private void CancelCharge()
+    {
+        isCharging = false;
+        SetRingsVisible(false);
+
+        if (movement) movement.SetMovementEnabled(true);
+
+        RestoreCamera();
+        EndWindow();
+    }
+
+    private float GetChargeDuration()
+    {
+        float stamina01 = 0f;
+
+        if (attributes && attributes.MaxStamina > 0f)
+        {
+            stamina01 = Mathf.Clamp01(attributes.CurrentStamina / attributes.MaxStamina);
+        }
+
+        float min = Mathf.Min(minChargeDuration, maxChargeDuration);
+        float max = Mathf.Max(minChargeDuration, maxChargeDuration);
+        return Mathf.Lerp(max, min, stamina01);
+    }
+
+    private float GetCurrentChargeRadius()
+    {
+        if (chargeDuration <= 0.0001f) return 0f;
+
+        float t = Mathf.Clamp01(chargeTimer / chargeDuration);
+        return Mathf.Lerp(chargeStartRadius, 0f, t);
+    }
+
     private void FocusCamera(Transform target)
     {
         if (!target) return;
@@ -218,7 +360,6 @@ public class PerfectDodgeComponent : NovaComponent
         if (cameraController) cameraController.SetFocusOverride(target, cameraFocusHeight, cameraFocusRatio);
     }
 
-    // 카메라를 플레이어 추적으로 되돌린다.
     private void RestoreCamera()
     {
         if (cameraArm) cameraArm.ResetLookTarget();
@@ -242,10 +383,93 @@ public class PerfectDodgeComponent : NovaComponent
     private void EndWindow()
     {
         isActive = false;
+        isCharging = false;
         windowTimer = 0f;
-        delayTimer = 0f;
-        queuedStrongAttack = false;
+        chargeTimer = 0f;
+        resolvedTimer = 0f;
+        resolvedResult = ChargeResult.None;
         focusTarget = null;
+        SetRingsVisible(false);
         RestoreTimeScale();
+    }
+
+    private void CreateRings()
+    {
+        shrinkingRing = CreateRing("StrongAttackChargeRing", shrinkingRingColor, 0.08f);
+        judgmentRing = CreateRing("StrongAttackJudgmentRing", judgmentRingColor, 0.12f);
+        if (shrinkingRing) shrinkingRing.transform.SetParent(transform, false);
+        if (judgmentRing) judgmentRing.transform.SetParent(transform, false);
+        SetRingsVisible(false);
+    }
+
+    static void DestroyRing(LineRenderer line)
+    {
+        if (!line) return;
+
+        if (line.sharedMaterial) Destroy(line.sharedMaterial);
+        Destroy(line.gameObject);
+    }
+
+    static LineRenderer CreateRing(string name, Color color, float width)
+    {
+        var go = new GameObject(name);
+        go.hideFlags = HideFlags.HideAndDontSave;
+
+        var line = go.AddComponent<LineRenderer>();
+        line.loop = true;
+        line.useWorldSpace = true;
+        line.positionCount = RingSegments;
+        line.startWidth = width;
+        line.endWidth = width;
+        line.widthMultiplier = 1f;
+        line.alignment = LineAlignment.View;
+        line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        line.receiveShadows = false;
+        line.numCapVertices = 2;
+        line.textureMode = LineTextureMode.Stretch;
+
+        var shader = Shader.Find("Sprites/Default");
+        if (!shader) shader = Shader.Find("Universal Render Pipeline/Unlit");
+        if (shader)
+        {
+            var material = new Material(shader);
+            material.color = color;
+            line.sharedMaterial = material;
+        }
+
+        line.startColor = color;
+        line.endColor = color;
+        return line;
+    }
+
+    private void SetRingsVisible(bool visible)
+    {
+        if (shrinkingRing) shrinkingRing.enabled = visible;
+        if (judgmentRing) judgmentRing.enabled = visible;
+    }
+
+    private void UpdateRings()
+    {
+        bool show = isCharging && Owner;
+        SetRingsVisible(show);
+
+        if (!show) return;
+
+        Vector3 center = Owner.transform.position;
+        center.y += ringHeight;
+
+        WriteRing(shrinkingRing, center, GetCurrentChargeRadius());
+        WriteRing(judgmentRing, center, judgmentRadius);
+    }
+
+    static void WriteRing(LineRenderer line, Vector3 center, float radius)
+    {
+        if (!line) return;
+
+        for (int i = 0; i < RingSegments; i++)
+        {
+            float angle = (i / (float)RingSegments) * Mathf.PI * 2f;
+            line.SetPosition(i, center + new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius));
+        }
     }
 }

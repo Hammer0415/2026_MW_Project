@@ -14,7 +14,7 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
-  m_Fog: 1
+  m_Fog: 0
   m_FogColor: {r: 0.69200265, g: 0.7075472, b: 0.6574849, a: 1}
   m_FogMode: 3
   m_FogDensity: 0.012
@@ -3469,7 +3469,7 @@ Light:
   serializedVersion: 13
   m_Type: 1
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 1.5
+  m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -3531,13 +3531,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 410087039}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.5674488, y: 0.4282759, z: -0.4489488, w: -0.5413193}
+  m_LocalRotation: {x: 0, y: 0.92387956, z: -0.38268343, w: 0}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 92.7, y: 283.3, z: 0}
+  m_LocalEulerAnglesHint: {x: 45, y: 180, z: 0}
 --- !u!114 &410087042
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4922,7 +4922,7 @@ RectTransform:
   m_Father: {fileID: 1737888918}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -4997,7 +4997,7 @@ RectTransform:
   m_Father: {fileID: 1301547126}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -5419,7 +5419,7 @@ RectTransform:
   m_Father: {fileID: 2048358687}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -6590,7 +6590,7 @@ GameObject:
   - component: {fileID: 811000008}
   - component: {fileID: 811000009}
   m_Layer: 6
-  m_Name: Enemy_Melee
+  m_Name: Enemy_Boss01
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6605,9 +6605,9 @@ Transform:
   m_GameObject: {fileID: 811000001}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: 25.1, y: 0, z: -3.8000002}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: -25, y: 10.5, z: 24}
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 2020882906}
   - {fileID: 811000015}
@@ -6690,12 +6690,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6389639eaeb4223419af202682aabba3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AttributeComponent
-  maxHealth: 80
-  defense: 2
+  maxHealth: 9999
+  defense: 7
   maxStamina: 100
   staminaRecoveryRate: 20
   staminaRecoveryDelay: 0
-  attackPower: 12
+  attackPower: 15
 --- !u!114 &811000007
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6741,7 +6741,7 @@ MonoBehaviour:
   enemyType: 0
   detectionRange: 16
   attackRange: 1.8
-  moveSpeed: 10
+  moveSpeed: 15
   rotationSpeed: 10
   aggroDuration: 6
   attackAbility: {fileID: 0}
@@ -6757,7 +6757,7 @@ MonoBehaviour:
   rangedAttackEffectPrefab: {fileID: 0}
   rangedAttackEffectLifetime: 0.5
   perfectDodgeWindowDuration: 0.25
-  dashTriggerRange: 5.8
+  dashTriggerRange: 8
   dashSpeed: 17
   dashDuration: 0.28
   dashCooldown: 2
@@ -6822,7 +6822,7 @@ Transform:
   m_GameObject: {fileID: 811000014}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.5, z: 0.7}
+  m_LocalPosition: {x: 0, y: 1.75, z: 0.7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6850,7 +6850,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &811000102
 Transform:
   m_ObjectHideFlags: 0
@@ -7501,7 +7501,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &811000202
 Transform:
   m_ObjectHideFlags: 0
@@ -9084,7 +9084,7 @@ RectTransform:
   m_Father: {fileID: 811000418}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -9283,7 +9283,7 @@ RectTransform:
   m_Father: {fileID: 811000427}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -9727,7 +9727,7 @@ RectTransform:
   m_Father: {fileID: 811000518}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -9926,7 +9926,7 @@ RectTransform:
   m_Father: {fileID: 811000527}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -10591,7 +10591,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!95 &849148509
 Animator:
   serializedVersion: 7
@@ -18442,7 +18442,7 @@ RectTransform:
   m_Father: {fileID: 1331698492}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -19294,7 +19294,7 @@ RectTransform:
   m_Father: {fileID: 1449269585}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -20057,7 +20057,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!95 &1278715513
 Animator:
   serializedVersion: 7
@@ -21520,7 +21520,7 @@ Transform:
   m_GameObject: {fileID: 1529934645}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 26.5, y: 1, z: -17.14}
+  m_LocalPosition: {x: -25, y: 11.5, z: -20}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -22115,7 +22115,7 @@ RectTransform:
   m_Father: {fileID: 1171074721}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -22480,7 +22480,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!95 &1684586892
 Animator:
   serializedVersion: 7
@@ -23598,7 +23598,7 @@ RectTransform:
   m_Father: {fileID: 133446910}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -25894,7 +25894,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!95 &1993759378
 Animator:
   serializedVersion: 7
@@ -26514,7 +26514,7 @@ RectTransform:
   m_Father: {fileID: 1881215264}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -26707,7 +26707,7 @@ Transform:
   m_GameObject: {fileID: 2079683390}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 26.52, y: 0, z: -18.86}
+  m_LocalPosition: {x: -25, y: 10.5, z: -20}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -26857,6 +26857,22 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: cd409006-3e60-40ee-9478-45eac06f9de8
     m_ActionName: 'PlayerAction/ZoomInOut[/Mouse/scroll/y]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 2079683410}
+        m_TargetAssemblyTypeName: PerfectDodgeComponent, Assembly-CSharp
+        m_MethodName: OnStrongAttackCharge
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: b7e21c4a-9f3d-4a18-8c0e-1d5a6b7c8d9e
+    m_ActionName: 'PlayerAction/StrongAttackCharge[/Mouse/rightButton]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: PC
   m_DefaultActionMap: PlayerAction
@@ -27000,12 +27016,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PerfectDodgeComponent
   slowMotionDuration: 5
   slowMotionTimeScale: 0.1
-  strongAttackDamageMultiplier: 2
+  strongAttackDamageMultiplier: 3
+  partialDamageMultiplier: 1.4
   strongAttackStunDuration: 2
-  strongAttackDelay: 0.65
+  strongAttackAnimationTrigger: 
+  minChargeDuration: 0.5
+  maxChargeDuration: 1.8
+  chargeStartRadius: 4.5
+  judgmentRadius: 1.35
+  judgmentWindow: 0.22
+  ringHeight: 0.06
+  shrinkingRingColor: {r: 1, g: 0.34362718, b: 0.18039215, a: 0.95}
+  judgmentRingColor: {r: 0.95, g: 0.95, b: 0.95, a: 0.9}
   cameraFocusHeight: 1.2
   cameraFocusRatio: 0.6
   isActive: 0
+  isCharging: 0
   windowTimer: 0
 --- !u!1 &2088453139
 GameObject:
@@ -27547,8 +27573,8 @@ SceneRoots:
   - {fileID: 2079683396}
   - {fileID: 1529934646}
   - {fileID: 1705765289}
-  - {fileID: 260007529}
   - {fileID: 811000002}
+  - {fileID: 260007529}
   - {fileID: 1278715520}
   - {fileID: 1993759385}
   - {fileID: 811000102}

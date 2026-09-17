@@ -1,0 +1,23 @@
+hToon_v2 — Ming cartoon shader (new, not based on hToon)
+
+Assign: hToon/hToon_v2
+
+Shading Part
+- Auto: spec mask G 0.1~0.8 = cloth/silk, 0.9+ = metal, SDF toggle = face
+- Face: SDF shadow, skin wrap, scatter
+- Skin: wrap + terminator scatter
+- Hair: Kajiya-Kay dual highlight
+- Cloth: silk anisotropy
+- Metal: matcap + gold
+
+Face SDF
+- Object +Z is face front
+- Light Y 0 = full face shadow, 90 = half, 180 = fully lit
+- Assign the SDF map to SDF / Shadow Mask and enable Use SDF Face Shadow
+
+Start values
+- Face: Part Face, Lit 0.52, Smooth 0.03
+- Skin: Part Skin, Wrap 0.3~0.4
+- Hair: Part Hair, Outline 0.8~1.2
+- Cloth: Part Cloth
+- Keep Vertex Color AO / Outline off unless the mesh has painted colors

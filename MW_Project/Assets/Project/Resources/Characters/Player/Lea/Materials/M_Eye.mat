@@ -21,17 +21,18 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: M_Eye
-  m_Shader: {fileID: 4800000, guid: decb168ac9e803140923cb22b8f5d89f, type: 3}
+  m_Shader: {fileID: 4800000, guid: e8b1d5f9a67c168b5d0e2f37e8f9a0b1, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords:
+  - _USEVERTEXCOLORAO_ON
+  - _USEVERTEXCOLOROUTLINE_ON
   - _USEVIEWCLIP_ON
-  - _ZWRITE_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 3000
+  m_CustomRenderQueue: 2025
   stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
@@ -75,6 +76,10 @@ Material:
         m_Texture: {fileID: 2800000, guid: 689da7fac50b3491481d5c0e6ae12849, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _InnerLineTex:
+        m_Texture: {fileID: 2800000, guid: 689da7fac50b3491481d5c0e6ae12849, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -100,6 +105,14 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ParallaxMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _PatternTex:
+        m_Texture: {fileID: 2800000, guid: 689da7fac50b3491481d5c0e6ae12849, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RampTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -135,8 +148,12 @@ Material:
     m_Floats:
     - _AOIntensity: 0
     - _AddPrecomputedVelocity: 0
+    - _AlbedoContrast: 1
+    - _AlbedoSaturation: 1
     - _AlphaClip: 0
     - _AlphaToMask: 0
+    - _AmbientIntensity: 0
+    - _BandSoftness: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
@@ -145,6 +162,7 @@ Material:
     - _Cull: 2
     - _CullMode: 0
     - _Cutoff: 0.5
+    - _DarkRimIntensity: 0
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
@@ -155,21 +173,46 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
+    - _GoldIntensity: 0
+    - _HairPrimaryIntensity: 0
+    - _HairPrimaryPower: 1
+    - _HairSecondaryIntensity: 0
+    - _HairSecondaryPower: 1
+    - _HairShift: -1
+    - _InnerLineIntensity: 0
+    - _InnerLineThreshold: 0
     - _MetalIntensity: 0
     - _Metallic: 0
+    - _MidRange: 0
+    - _MidSmooth: 0.001
+    - _NonMetalIntensity: 0
+    - _NonMetalPower: 0.5
     - _NormalIntensity: 0
     - _OcclusionStrength: 1
+    - _OutlineAlbedoMix: 0
     - _OutlineFadeEnd: 0
     - _OutlineFadeStart: 0
     - _OutlineWidth: 0
+    - _OutlineZOffset: 0
     - _Parallax: 0.005
+    - _PatternInShadow: 0
+    - _PatternIntensity: 0
     - _QueueOffset: 0
+    - _ReceiveRealtimeShadow: 0
     - _ReceiveShadows: 1
-    - _RimPower: 10
+    - _RimIntensity: 0
+    - _RimLightMask: 0
+    - _RimPower: 0.5
+    - _RimThreshold: 0
+    - _ScatterIntensity: 0
+    - _ShadingPart: 6
     - _ShadowRange: 0
     - _ShadowSmooth: 0.001
+    - _SilkAnisotropy: 0
+    - _SilkIntensity: 0
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
+    - _SpecInShadow: 0
     - _SpecularHighlights: 1
     - _SpecularIntensity: 0
     - _SrcBlend: 1
@@ -178,23 +221,38 @@ Material:
     - _StencilPassOp: 2
     - _StencilRef: 1
     - _Surface: 0
+    - _UseRamp: 0
     - _UseSDF: 0
+    - _UseVertexColorAO: 1
+    - _UseVertexColorOutline: 1
     - _UseViewClip: 1
     - _ViewThreshold: -0.2
     - _WorkflowMode: 1
+    - _WrapLighting: 0
     - _XRMotionVectorsPass: 1
-    - _ZTest: 4
-    - _ZWrite: 1
+    - _ZTest: 8
+    - _ZWrite: 0
     - _nonMetalIntensity: 0
     - _nonMetalSmooth: 0.001
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _DarkRimColor: {r: 0, g: 0, b: 0, a: 0}
     - _DiffuseColor: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 0}
+    - _GoldColor: {r: 0, g: 0, b: 0, a: 0}
+    - _GroundColor: {r: 0, g: 0, b: 0, a: 0}
+    - _HairSpecColor: {r: 0, g: 0, b: 0, a: 0}
+    - _InkShadowColor: {r: 0, g: 0, b: 0, a: 0}
+    - _InnerLineColor: {r: 0, g: 0, b: 0, a: 0}
+    - _MidtoneColor: {r: 0, g: 0, b: 0, a: 0}
     - _OutlineColor: {r: 0, g: 0, b: 0, a: 0}
+    - _PatternColor: {r: 0, g: 0, b: 0, a: 0}
     - _RimColor: {r: 0, g: 0, b: 0, a: 0}
-    - _ShadowColor: {r: 1, g: 1, b: 1, a: 0}
+    - _ScatterColor: {r: 0, g: 0, b: 0, a: 0}
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0}
+    - _SkyColor: {r: 0, g: 0, b: 0, a: 0}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
+    - _WarmBounceColor: {r: 0, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

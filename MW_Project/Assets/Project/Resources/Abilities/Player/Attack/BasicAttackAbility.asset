@@ -21,7 +21,7 @@ MonoBehaviour:
   canActivateWhileBusy: 1
   animationTrigger: 
   useRootMotion: 0
-  damage: 10
+  damage: 8
   muzzleEffectPrefab: {fileID: 3344128880370025543, guid: 1244a49478989e346a48c0f491d14764, type: 3}
   muzzleEffectLifetime: 0.5
   hitEffectPrefab: {fileID: 0}

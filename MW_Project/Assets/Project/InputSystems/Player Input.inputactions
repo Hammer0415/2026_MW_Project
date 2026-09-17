@@ -85,6 +85,16 @@
                     "interactions": "",
                     "initialStateCheck": false,
                     "priority": 0
+                },
+                {
+                    "name": "StrongAttackCharge",
+                    "type": "Button",
+                    "id": "b7e21c4a-9f3d-4a18-8c0e-1d5a6b7c8d9e",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
                 }
             ],
             "bindings": [
@@ -340,6 +350,17 @@
                     "action": "ZoomInOut",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "c8f32d5b-0e4e-4b29-9d1f-2e6b7c8d9e0f",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";PC",
+                    "action": "StrongAttackCharge",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         }

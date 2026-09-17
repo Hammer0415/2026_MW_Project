@@ -239,11 +239,11 @@ public class CombatComponent : NovaComponent
             return;
         }
 
-        bool strongAttack = perfectDodge && perfectDodge.IsStrongAttackReady;
+        bool strongAttack = perfectDodge && perfectDodge.HasResolvedResult;
 
         if (strongAttack)
         {
-            damageInfo.Amount *= perfectDodge.StrongAttackDamageMultiplier;
+            damageInfo.Amount *= perfectDodge.ResolvedDamageMultiplier;
         }
 
         IDamageable damageable = target.GetComponent<IDamageable>();
@@ -333,7 +333,7 @@ public class CombatComponent : NovaComponent
     {
         NovaCharacter priorityTarget = null;
 
-        if (perfectDodge && perfectDodge.IsStrongAttackReady)
+        if (perfectDodge && perfectDodge.ShouldPreferFocusTarget)
         {
             priorityTarget = perfectDodge.FocusTarget;
         }
@@ -423,7 +423,7 @@ public class CombatComponent : NovaComponent
     // 락온 대상 또는 가장 가까운 적을 공격 대상으로 고른다.
     private NovaCharacter GetAttackTarget()
     {
-        if (perfectDodge && perfectDodge.IsStrongAttackReady && perfectDodge.FocusTarget && !perfectDodge.FocusTarget.IsDead)
+        if (perfectDodge && perfectDodge.ShouldPreferFocusTarget)
         {
             return perfectDodge.FocusTarget;
         }

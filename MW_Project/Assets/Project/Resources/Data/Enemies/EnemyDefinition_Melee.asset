@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyDefinition
   displayName: "\uADFC\uAC70\uB9AC"
   enemyType: 0
-  maxHealth: 80
-  attackDamage: 12
-  defense: 2
+  maxHealth: 500
+  attackDamage: 15
+  defense: 4
   poise: 0
   detectionRange: 16
   attackRange: 1.8
@@ -24,10 +24,10 @@ MonoBehaviour:
   rotationSpeed: 10
   aggroDuration: 6
   attackDelay: 1.15
-  meleeHitRadius: 1.4
+  meleeHitRadius: 2
   rangedAttackRange: 12
-  dashTriggerRange: 5.8
-  dashSpeed: 17
+  dashTriggerRange: 8
+  dashSpeed: 23
   dashDuration: 0.28
   dashCooldown: 2
   abilities: []
