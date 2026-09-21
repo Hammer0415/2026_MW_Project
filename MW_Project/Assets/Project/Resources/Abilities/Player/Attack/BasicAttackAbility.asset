@@ -22,7 +22,7 @@ MonoBehaviour:
   animationTrigger: 
   useRootMotion: 0
   damage: 8
-  muzzleEffectPrefab: {fileID: 3344128880370025543, guid: 1244a49478989e346a48c0f491d14764, type: 3}
+  muzzleEffectPrefab: {fileID: 5316775687373342906, guid: 36cd4efae8fbb464a9002cc7fda91eff, type: 3}
   muzzleEffectLifetime: 0.5
   hitEffectPrefab: {fileID: 0}
   hitEffectLifetime: 0.5
